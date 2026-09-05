@@ -1,0 +1,23 @@
+{
+  "_readme": "Base de carros do ACC Manager. 'temperament' vai de 1 (estavel/previsivel) a 5 (nervoso/traseira viva) e so serve para modular a intensidade do Criador de Setups - nao afeta o restante do app. Quando a Kunos lancar um carro novo (DLC/pacote), basta adicionar uma entrada aqui: nao precisa editar nenhum arquivo .py. Sugestao de temperamento inicial para carro novo: 3 (neutro) ate voce calibrar com experiencia propria.",
+  "cars": {
+    "amr_v8_vantage_gt3":           { "display_name": "Aston Martin V8 Vantage GT3",      "class": "GT3", "temperament": 4 },
+    "audi_r8_lms_evo_ii_gt3":       { "display_name": "Audi R8 LMS GT3 Evo II",            "class": "GT3", "temperament": 2 },
+    "bmw_m4_gt3":                   { "display_name": "BMW M4 GT3",                        "class": "GT3", "temperament": 2 },
+    "ferrari_296_gt3":              { "display_name": "Ferrari 296 GT3",                   "class": "GT3", "temperament": 4 },
+    "mclaren_720s_gt3_evo":         { "display_name": "McLaren 720S GT3 Evo",              "class": "GT3", "temperament": 3 },
+    "mercedes_amg_gt3_evo":         { "display_name": "Mercedes-AMG GT3 Evo",              "class": "GT3", "temperament": 3 },
+    "porsche_992_gt3_r":            { "display_name": "Porsche 911 GT3 R (992)",           "class": "GT3", "temperament": 3 },
+    "lamborghini_huracan_gt3_evo2": { "display_name": "Lamborghini Huracan GT3 EVO2",      "class": "GT3", "temperament": 2 },
+    "honda_nsx_gt3_evo":            { "display_name": "Honda NSX GT3 Evo",                 "class": "GT3", "temperament": 3 },
+    "nissan_gt_r_nismo_gt3":        { "display_name": "Nissan GT-R Nismo GT3",             "class": "GT3", "temperament": 3 },
+    "bentley_continental_gt3_2018": { "display_name": "Bentley Continental GT3 (2018)",    "class": "GT3", "temperament": 2 },
+    "lexus_rc_f_gt3":               { "display_name": "Lexus RC F GT3",                    "class": "GT3", "temperament": 3 },
+    "aston_martin_v12_vantage_gt3": { "display_name": "Aston Martin V12 Vantage GT3",      "class": "GT3", "temperament": 4 },
+    "porsche_991ii_gt3_r":          { "display_name": "Porsche 911 II GT3 R (991)",        "class": "GT3", "temperament": 4 },
+    "ferrari_488_gt3_evo":          { "display_name": "Ferrari 488 GT3 Evo",               "class": "GT3", "temperament": 4 },
+    "lamborghini_huracan_gt3_evo":  { "display_name": "Lamborghini Huracan GT3 EVO",       "class": "GT3", "temperament": 2 },
+    "ford_mustang_gt3":             { "display_name": "Ford Mustang GT3",                  "class": "GT3", "temperament": 3 },
+    "chevrolet_corvette_gt3_r":     { "display_name": "Chevrolet Corvette Z06 GT3.R",      "class": "GT3", "temperament": 3 }
+  }
+}

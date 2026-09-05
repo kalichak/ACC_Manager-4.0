@@ -1,0 +1,30 @@
+{
+  "_readme": "Base de pistas do ACC Manager. downforce/bumpiness/brake_stress/avg_speed vao de 1 a 5 (3 = neutro/medio) e alimentam o Criador de Setups. length_km e um dado real/objetivo (nao muda com patch) usado para calibrar avg_speed automaticamente a partir dos seus proprios tempos de volta (ver core/track_profile_calibrator.py). Quando a Kunos lancar uma pista nova, adicione uma entrada aqui - nao precisa editar nenhum arquivo .py.",
+  "tracks": {
+    "monza":           { "display_name": "Monza (Italia)",                       "length_km": 5.79,  "downforce": 1, "bumpiness": 2, "brake_stress": 5, "avg_speed": 5 },
+    "spa":             { "display_name": "Spa-Francorchamps (Belgica)",          "length_km": 7.00,  "downforce": 3, "bumpiness": 3, "brake_stress": 3, "avg_speed": 5 },
+    "nurburgring":      { "display_name": "Nurburgring GP (Alemanha)",           "length_km": 5.15,  "downforce": 3, "bumpiness": 2, "brake_stress": 3, "avg_speed": 3 },
+    "nurburgring_24h":  { "display_name": "Nurburgring 24h / Nordschleife",      "length_km": 25.38, "downforce": 2, "bumpiness": 5, "brake_stress": 2, "avg_speed": 4 },
+    "silverstone":      { "display_name": "Silverstone (Reino Unido)",          "length_km": 5.89,  "downforce": 4, "bumpiness": 2, "brake_stress": 2, "avg_speed": 5 },
+    "brands_hatch":     { "display_name": "Brands Hatch (Reino Unido)",         "length_km": 3.91,  "downforce": 3, "bumpiness": 3, "brake_stress": 3, "avg_speed": 2 },
+    "misano":           { "display_name": "Misano (Italia)",                    "length_km": 4.23,  "downforce": 4, "bumpiness": 2, "brake_stress": 3, "avg_speed": 2 },
+    "barcelona":        { "display_name": "Barcelona-Catalunya (Espanha)",      "length_km": 4.66,  "downforce": 4, "bumpiness": 2, "brake_stress": 3, "avg_speed": 3 },
+    "hungaroring":      { "display_name": "Hungaroring (Hungria)",              "length_km": 4.38,  "downforce": 5, "bumpiness": 2, "brake_stress": 3, "avg_speed": 2 },
+    "paul_ricard":      { "display_name": "Paul Ricard (Franca)",               "length_km": 5.84,  "downforce": 3, "bumpiness": 1, "brake_stress": 3, "avg_speed": 3 },
+    "zandvoort":        { "display_name": "Zandvoort (Holanda)",                "length_km": 4.26,  "downforce": 4, "bumpiness": 3, "brake_stress": 2, "avg_speed": 3 },
+    "zolder":           { "display_name": "Zolder (Belgica)",                   "length_km": 4.01,  "downforce": 3, "bumpiness": 3, "brake_stress": 3, "avg_speed": 2 },
+    "imola":            { "display_name": "Imola (Italia)",                     "length_km": 4.91,  "downforce": 3, "bumpiness": 3, "brake_stress": 4, "avg_speed": 3 },
+    "kyalami":          { "display_name": "Kyalami (Africa do Sul)",            "length_km": 4.52,  "downforce": 3, "bumpiness": 3, "brake_stress": 3, "avg_speed": 4 },
+    "mount_panorama":   { "display_name": "Mount Panorama / Bathurst",          "length_km": 6.21,  "downforce": 2, "bumpiness": 4, "brake_stress": 4, "avg_speed": 3 },
+    "suzuka":           { "display_name": "Suzuka (Japao)",                     "length_km": 5.81,  "downforce": 4, "bumpiness": 2, "brake_stress": 3, "avg_speed": 4 },
+    "laguna_seca":      { "display_name": "WeatherTech Laguna Seca (EUA)",      "length_km": 3.60,  "downforce": 3, "bumpiness": 3, "brake_stress": 4, "avg_speed": 2 },
+    "donington":        { "display_name": "Donington Park (Reino Unido)",       "length_km": 4.02,  "downforce": 3, "bumpiness": 3, "brake_stress": 3, "avg_speed": 2 },
+    "oulton_park":      { "display_name": "Oulton Park (Reino Unido)",          "length_km": 4.31,  "downforce": 3, "bumpiness": 4, "brake_stress": 2, "avg_speed": 2 },
+    "snetterton":       { "display_name": "Snetterton 300 (Reino Unido)",       "length_km": 4.78,  "downforce": 2, "bumpiness": 2, "brake_stress": 2, "avg_speed": 4 },
+    "cota":             { "display_name": "Circuit of the Americas (EUA)",      "length_km": 5.51,  "downforce": 3, "bumpiness": 3, "brake_stress": 4, "avg_speed": 3 },
+    "indianapolis":     { "display_name": "Indianapolis (EUA)",                 "length_km": 3.93,  "downforce": 2, "bumpiness": 2, "brake_stress": 3, "avg_speed": 4 },
+    "watkins_glen":     { "display_name": "Watkins Glen (EUA)",                 "length_km": 5.47,  "downforce": 3, "bumpiness": 2, "brake_stress": 3, "avg_speed": 4 },
+    "valencia":         { "display_name": "Valencia Ricardo Tormo (Espanha)",   "length_km": 4.01,  "downforce": 3, "bumpiness": 2, "brake_stress": 3, "avg_speed": 2 },
+    "red_bull_ring":    { "display_name": "Red Bull Ring (Austria)",            "length_km": 4.32,  "downforce": 2, "bumpiness": 1, "brake_stress": 4, "avg_speed": 4 }
+  }
+}
