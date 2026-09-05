@@ -131,15 +131,11 @@ class ServerTabMixin:
         right_layout = QVBoxLayout()
         box_preview = QGroupBox("Circuito")
         preview_layout = QVBoxLayout()
-        self.track_img_label = QLabel()
-        self.track_img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.track_img_label.setFixedSize(380, 240)
+        self.track_img_label = ResizableImageLabel()
         self.track_img_label.setStyleSheet("background-color: #09090a; border: 1px dashed #323238; border-radius: 6px;")
         self.track_title_label = QLabel()
         self.track_title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        font = QFont(); font.setPointSize(13); font.setBold(True)
-        self.track_title_label.setFont(font)
-        self.track_title_label.setStyleSheet("color: #ff3b30; margin-top: 8px;")
+        self.track_title_label.setStyleSheet("color: #ff3b30; margin-top: 8px; font-size: 13pt; font-weight: bold;")
         preview_layout.addWidget(self.track_img_label)
         preview_layout.addWidget(self.track_title_label)
         preview_layout.addStretch()
@@ -205,9 +201,9 @@ class ServerTabMixin:
         if img_path and os.path.exists(img_path):
             pixmap = QPixmap(img_path)
             if not pixmap.isNull():
-                self.track_img_label.setPixmap(pixmap.scaled(self.track_img_label.width(), self.track_img_label.height(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                self.track_img_label.setPixmap(pixmap)
                 return
-        self.track_img_label.clear()
+        self.track_img_label.setPixmap(QPixmap())
         self.track_img_label.setText(f"[Sem imagem disponivel para {track_id}]")
 
     def _find_track_image(self, track_id):
@@ -215,8 +211,38 @@ class ServerTabMixin:
         for ext in SUPPORTED_IMAGE_EXTENSIONS:
             cand = os.path.join(ASSETS_DIR, f"{track_id}{ext}")
             if os.path.exists(cand): return cand
-        return None
 
+            # Adiciona busca em "pistas" caso o usuario tenha colocado lá
+            cand2 = os.path.join(ASSETS_DIR, "pistas", f"{track_id}{ext}")
+            if os.path.exists(cand2): return cand2
+        return None
+class ResizableImageLabel(QLabel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumSize(200, 150)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._pixmap = None
+
+    def setPixmap(self, pixmap: QPixmap):
+        self._pixmap = pixmap
+        if pixmap and not pixmap.isNull():
+            self.update_image()
+        else:
+            super().clear()
+
+    def update_image(self):
+        if self._pixmap and not self._pixmap.isNull():
+            scaled_pixmap = self._pixmap.scaled(
+                self.size(),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+            super().setPixmap(scaled_pixmap)
+
+    def resizeEvent(self, event):
+        if self._pixmap and not self._pixmap.isNull():
+            self.update_image()
+        super().resizeEvent(event)
     # ==========================
     # METODOS MOTEC E TELEMETRIA
     # ==========================

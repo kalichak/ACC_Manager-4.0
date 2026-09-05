@@ -17,13 +17,20 @@ import os
 import sys
 import traceback
 
-BASE_DIR = os.path.dirname(os.path.abspath(sys.executable)) if getattr(sys, "frozen", False) \
-    else os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, "frozen", False):
+    # Local onde ficam as pastas empacotadas (assets, core/data) dentro do _internal
+    BASE_DIR = sys._MEIPASS
+    # Local onde o executavel esta rodando (para salvar .env e settings visíveis)
+    USER_DATA_DIR = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    USER_DATA_DIR = BASE_DIR
+
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-UI_SETTINGS_FILE = os.path.join(BASE_DIR, "ui_settings.json")
-ENV_FILE = os.path.join(BASE_DIR, ".env")
+UI_SETTINGS_FILE = os.path.join(USER_DATA_DIR, "ui_settings.json")
+ENV_FILE = os.path.join(USER_DATA_DIR, ".env")
 
 def load_or_create_env():
     user_home = os.path.expanduser("~")

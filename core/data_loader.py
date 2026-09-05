@@ -22,7 +22,7 @@ import sys
 # gravavel (o calibrador de pistas ESCREVE nesses arquivos) mesmo no .exe -
 # por isso o build recomendado e --onedir, nao --onefile (ver build_exe.bat).
 if getattr(sys, "frozen", False):
-    _APP_ROOT = os.path.dirname(os.path.abspath(sys.executable))
+    _APP_ROOT = sys._MEIPASS
 else:
     _APP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

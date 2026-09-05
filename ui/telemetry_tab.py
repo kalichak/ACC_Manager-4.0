@@ -15,8 +15,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPixmap
 
-from config import ld_telemetry_parser
-
+from core import ld_telemetry_parser
+from ui.server_tab import ResizableImageLabel
 
 class TelemetryTabMixin:
 
@@ -64,9 +64,7 @@ class TelemetryTabMixin:
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(10, 0, 0, 0)
 
-        self.motec_img_label = QLabel()
-        self.motec_img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.motec_img_label.setFixedSize(380, 240)
+        self.motec_img_label = ResizableImageLabel()
         self.motec_img_label.setStyleSheet("background-color: #09090a; border: 1px dashed #323238; border-radius: 6px;")
         right_layout.addWidget(self.motec_img_label)
 
@@ -207,9 +205,9 @@ class TelemetryTabMixin:
         img_path = self._find_track_image(track_id)
         if img_path and os.path.exists(img_path):
             pixmap = QPixmap(img_path)
-            self.motec_img_label.setPixmap(pixmap.scaled(self.motec_img_label.width(), self.motec_img_label.height(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            self.motec_img_label.setPixmap(pixmap)
         else:
-            self.motec_img_label.clear()
+            self.motec_img_label.setPixmap(QPixmap())
             self.motec_img_label.setText(f"[Sem imagem para {track_id}]")
 
         total_laps = lap.get("total_laps", 0)
