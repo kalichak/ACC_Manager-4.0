@@ -13,8 +13,20 @@ automaticamente se o arquivo JSON for alterado depois do processo iniciar.
 
 import json
 import os
+import sys
 
-_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+# Quando empacotado com PyInstaller (modo --onedir, recomendado pra este app),
+# sys.executable aponta pro .exe real, e core/data fica na mesma pasta dele.
+# Rodando como script normal, sobe um nivel a partir deste arquivo (core/) ate
+# a raiz do projeto. Isso e o que garante que core/data/*.json continua
+# gravavel (o calibrador de pistas ESCREVE nesses arquivos) mesmo no .exe -
+# por isso o build recomendado e --onedir, nao --onefile (ver build_exe.bat).
+if getattr(sys, "frozen", False):
+    _APP_ROOT = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    _APP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+_DATA_DIR = os.path.join(_APP_ROOT, "core", "data")
 _CARS_PATH = os.path.join(_DATA_DIR, "cars.json")
 _TRACKS_PATH = os.path.join(_DATA_DIR, "tracks.json")
 
