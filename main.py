@@ -13,13 +13,10 @@ dividida em:
 """
 
 import os
-from PyQt6.QtGui import QIcon
-
-from ui.styles import DARK_STYLE
-from ui.main_window import ACCManagerApp
-
+import sys
 
 try:
+    from PyQt6.QtGui import QIcon
     from PyQt6.QtWidgets import QApplication
 except ImportError:
     print("\n[ERRO CRITICO] PyQt6 nao esta instalado no ambiente atual!")
