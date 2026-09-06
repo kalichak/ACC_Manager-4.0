@@ -31,6 +31,8 @@ management, friends leaderboard and Discord notifications in one interface.
 - **Optional modules and languages:** enable or hide each module in Settings
   without restarting, and switch the interface between Portuguese, English and
   German at runtime.
+<img width="927" height="607" alt="LANGUAGES EN" src="https://github.com/user-attachments/assets/f4c2a026-6c4a-403f-8602-8d0914e7dd21" />
+
 ## Requirements
 
 - Windows 10 or later.

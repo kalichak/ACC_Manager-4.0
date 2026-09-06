@@ -35,6 +35,8 @@ Oberfläche.
 - **Optionale Module und Sprachen:** Module in den Einstellungen ohne Neustart
   ein- oder ausblenden und die Oberfläche zwischen Portugiesisch, Englisch und
   Deutsch wechseln.
+<img width="927" height="607" alt="LANGUAGES DE" src="https://github.com/user-attachments/assets/f4c2a026-6c4a-403f-8602-8d0914e7dd21" />
+
 ## Voraussetzungen
 
 - Windows 10 oder neuer.
