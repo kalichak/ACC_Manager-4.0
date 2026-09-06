@@ -15,20 +15,27 @@ as notificações via Discord.
   - Inicia e encerra o servidor dedicado do ACC.
   - Configura pista, carro, sessões, clima e condições de corrida.
   - Exibe o status do servidor e envia notificações para o Discord.
+ <img width="1279" height="789" alt="SERVER - PT BR" src="https://github.com/user-attachments/assets/fd34fb56-8f04-45bb-9e16-82a9b74198d1" />
+
 - **Telemetria**
   - Lê sessões gravadas pelo MoTeC.
   - Analisa arquivos `.ld` e `.ldx`.
   - Exibe voltas, tempos, velocidade média, frenagens, forças G e consistência.
   - Ajusta perfis de pistas com base nos dados de telemetria.
+ <img width="1278" height="945" alt="TELEMETRY PT-BR" src="https://github.com/user-attachments/assets/18393002-10c1-47ad-83cd-0c7dad6f8000" />
+
 - **Gerenciador de setups**
   - Lista, filtra, visualiza e edita setups do ACC.
   - Replica setups para outros carros ou pistas.
   - Ajusta pressões para compatibilidade com o ACC 1.9.
   - Cria sugestões de setup com base no carro, pista e estilo de condução.
+ <img width="1280" height="1389" alt="SETUPS PT-BR" src="https://github.com/user-attachments/assets/ab42d7e2-d502-44b0-90a2-23ec0b5f5975" />
+
 - **Ranking**
   - Publica melhores tempos em uma tabela compartilhada no Supabase.
   - Filtra resultados por carro e pista.
   - Mantém o histórico de voltas e o melhor tempo de cada piloto.
+<img width="1279" height="789" alt="SERVER - PT BR" src="https://github.com/user-attachments/assets/fd34fb56-8f04-45bb-9e16-82a9b74198d1" />
 
 - **Módulos e idiomas**
   - Ative ou desative as abas de servidor, telemetria, setups e ranking
