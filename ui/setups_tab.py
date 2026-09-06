@@ -22,6 +22,7 @@ from PyQt6.QtGui import QColor
 from config import TRACKS_DATABASE, CAR_NAMES_MAPPING, track_profile_calibrator
 from ui.dialogs import ReplicateDialog
 from ui.i18n import ui
+from ui.table_filters import apply_header_filters, install_header_filters, table_item
 
 
 class SetupsTabMixin:
@@ -63,6 +64,7 @@ class SetupsTabMixin:
         self.table_setups = QTableWidget(0, 3)
         self.table_setups.setHorizontalHeaderLabels([ui("Carro"), ui("Pista"), ui("Nome do Setup")])
         self.table_setups.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        install_header_filters(self.table_setups)
         self.table_setups.itemSelectionChanged.connect(self.show_selected_setup_details)
         main_splitter.addWidget(self.table_setups)
 
@@ -207,13 +209,19 @@ class SetupsTabMixin:
         track_val = self.setup_track_filter.currentText()
 
         setups = self.setup_mgr.get_filtered_setups(car_val, track_val)
-        self.table_setups.setRowCount(len(setups))
-        for row, s in enumerate(setups):
-            display_car = CAR_NAMES_MAPPING.get(s["car"].lower(), s["car"].replace("_", " ").title())
-            self.table_setups.setItem(row, 0, QTableWidgetItem(display_car))
-            self.table_setups.setItem(row, 1, QTableWidgetItem(s["track"]))
-            self.table_setups.setItem(row, 2, QTableWidgetItem(s["name"]))
-            self.table_setups.item(row, 0).setData(Qt.ItemDataRole.UserRole, s)
+        self.table_setups.setSortingEnabled(False)
+        try:
+            self.table_setups.setRowCount(len(setups))
+            for row, s in enumerate(setups):
+                display_car = CAR_NAMES_MAPPING.get(s["car"].lower(), s["car"].replace("_", " ").title())
+                self.table_setups.setItem(row, 0, table_item(display_car))
+                self.table_setups.setItem(row, 1, table_item(s["track"]))
+                self.table_setups.setItem(row, 2, table_item(s["name"]))
+                self.table_setups.item(row, 0).setData(Qt.ItemDataRole.UserRole, s)
+        finally:
+            self.table_setups.setSortingEnabled(True)
+
+        apply_header_filters(self.table_setups)
 
     def show_selected_setup_details(self):
         if not self.table_setups.selectedItems(): return

@@ -6,16 +6,24 @@
    que rodar no Windows - nao da pra gerar um .exe Windows a partir de
    Linux/Mac).
 2. De dois cliques em `build_exe.bat` (ou rode `build_exe.bat` no
-   PowerShell/CMD dentro da pasta do projeto).
+  PowerShell/CMD dentro da pasta do projeto). Esse arquivo usa o launcher
+  `py`, cria a `venv` automaticamente e instala o PyInstaller e todas as
+  dependencias antes do empacotamento.
 3. Espere - a primeira vez demora mais porque instala tudo do zero
    (PyQt6, numpy etc. dentro de uma venv nova).
 4. Pronto: o app fica em `dist\ACCManager\ACCManager.exe`.
+
+Para iniciar o programa, use `run_acc_manager.bat`. Ele abre o executavel
+empacotado e nao exige Python no computador do usuario. O `run_acc_manager.bat`
+so tenta `python main.py` quando o executavel ainda nao foi gerado, como
+fallback para desenvolvimento.
 
 ## Distribuindo pros seus amigos
 
 Zipe e mande a pasta **inteira** `dist\ACCManager`, nao so o `.exe`. Ela
 contem:
 - `ACCManager.exe`
+- `run_acc_manager.bat`, para iniciar com duplo clique
 - As bibliotecas Python empacotadas (PyQt6, numpy etc.)
 - `core\data\cars.json` e `tracks.json` (a base de carros/pistas)
 - `assets\` (imagens de previa das pistas)

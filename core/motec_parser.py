@@ -32,6 +32,31 @@ class MotecParser:
             return float(hours) * 3600 + float(minutes) * 60 + float(seconds)
         return float(cleaned)
 
+    @staticmethod
+    def _detail_value(details, name, default=""):
+        """Busca campos MoTeC sem depender de caixa ou espacos extras."""
+        wanted = " ".join(str(name).split()).casefold()
+        for key, value in details.items():
+            if " ".join(str(key).split()).casefold() == wanted:
+                return value if value is not None else default
+        return default
+
+    def _fastest_marker_time(self, file_path):
+        """Calcula a melhor volta quando o resumo final ainda nao existe."""
+        try:
+            root = ET.parse(file_path).getroot()
+            times = sorted(
+                float(marker.get("Time"))
+                for marker in root.iter("Marker")
+                if marker.get("ClassName") == "BCN" and marker.get("Time")
+            )
+        except (ET.ParseError, TypeError, ValueError):
+            return 0.0
+
+        if len(times) < 2:
+            return 0.0
+        return min((end - start) / 1_000_000.0 for start, end in zip(times, times[1:]))
+
     def _normalize_track_name(self, track_id):
         if not track_id:
             return "Desconhecida"
@@ -93,13 +118,13 @@ class MotecParser:
                         details[node_id] = value
 
             summary["details"] = details
-            summary["total_laps"] = int(details.get("Total Laps", 0) or 0)
-            summary["fastest_time"] = details.get("Fastest Time", "")
-            summary["fastest_lap"] = details.get("Fastest Lap", "")
-            summary["session_type"] = details.get("Session", "N/A")
-            summary["track_temp"] = details.get("Track Temperature", "N/A")
-            summary["ambient_temp"] = details.get("Ambient Temperature", "N/A")
-            summary["vehicle_weight"] = details.get("Vehicle Weight", "N/A")
+            summary["total_laps"] = int(self._detail_value(details, "Total Laps", 0) or 0)
+            summary["fastest_time"] = self._detail_value(details, "Fastest Time")
+            summary["fastest_lap"] = self._detail_value(details, "Fastest Lap")
+            summary["session_type"] = self._detail_value(details, "Session", "N/A")
+            summary["track_temp"] = self._detail_value(details, "Track Temperature", "N/A")
+            summary["ambient_temp"] = self._detail_value(details, "Ambient Temperature", "N/A")
+            summary["vehicle_weight"] = self._detail_value(details, "Vehicle Weight", "N/A")
 
         except Exception:
             pass
@@ -119,6 +144,11 @@ class MotecParser:
             try:
                 summary = self.read_session_file(file_path)
                 fastest_time_value = summary.get("fastest_time")
+                if not fastest_time_value:
+                    marker_time = self._fastest_marker_time(file_path)
+                    if marker_time > 0:
+                        fastest_time_value = marker_time
+                        summary["fastest_time"] = marker_time
                 if not fastest_time_value:
                     continue
 
@@ -158,9 +188,8 @@ class MotecParser:
         return results
 
     def delete_telemetry(self, file_path):
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        
-        ld_path = file_path.replace(".ldx", ".ld")
-        if os.path.exists(ld_path):
-            os.remove(ld_path)
+        base, _extension = os.path.splitext(file_path)
+        paths = (file_path, base + ".ld")
+        for path in paths:
+            if os.path.exists(path):
+                os.remove(path)
