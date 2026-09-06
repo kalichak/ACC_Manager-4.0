@@ -29,8 +29,34 @@ else:
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
+# Modulos que o app conhece e a combinacao usada quando o usuario nunca
+# mexeu na tela de Configuracoes (todos ligados = comportamento atual).
+AVAILABLE_MODULES = ["server", "telemetry", "setups", "leaderboard"]
+DEFAULT_ENABLED_MODULES = ",".join(AVAILABLE_MODULES)
+DEFAULT_LANGUAGE = "en"
+
 UI_SETTINGS_FILE = os.path.join(USER_DATA_DIR, "ui_settings.json")
 ENV_FILE = os.path.join(USER_DATA_DIR, ".env")
+
+def _parse_enabled_modules(raw):
+    """Le a string 'server,telemetry,...' do .env e devolve so os modulos
+    que o app reconhece.
+
+    - raw is None (chave ENABLED_MODULES nem existe no .env, ex.: .env
+      criado por uma versao antiga do app antes desta feature) -> assume
+      todos habilitados, que era o comportamento antigo.
+    - raw == "" (usuario desmarcou TODAS as caixinhas na tela de
+      Configuracoes e salvou de proposito) -> retorna lista vazia mesmo.
+      A janela principal sabe lidar com isso mostrando uma aba de aviso;
+      o botao de Configuracoes continua sempre visivel no canto, entao o
+      usuario nunca fica "trancado para fora" das proprias configuracoes.
+    - texto invalido/corrompido -> ignora entradas desconhecidas; se
+      sobrar nada valido, cai no mesmo caso de lista vazia acima (nunca
+      trava o app, so mostra o aviso).
+    """
+    if raw is None:
+        return list(AVAILABLE_MODULES)
+    return [m.strip() for m in raw.split(",") if m.strip() in AVAILABLE_MODULES]
 
 def load_or_create_env():
     user_home = os.path.expanduser("~")
@@ -40,7 +66,9 @@ def load_or_create_env():
         "ACC_SETUPS_PATH": os.path.join(user_home, "Documents", "Assetto Corsa Competizione", "Setups"),
         "SUPABASE_URL": "",
         "SUPABASE_KEY": "",
-        "DISCORD_WEBHOOK_URL": ""
+        "DISCORD_WEBHOOK_URL": "",
+        "ENABLED_MODULES": DEFAULT_ENABLED_MODULES,
+        "APP_LANGUAGE": DEFAULT_LANGUAGE,
     }
 
     onedrive_docs = os.path.join(user_home, "OneDrive", "Documentos", "Assetto Corsa Competizione")
@@ -93,6 +121,7 @@ def reload_env():
     tempo real (sem precisar reiniciar o app). Retorna o dict novo."""
     global ENV_VARS, SERVER_PATH, DEFAULT_MOTEC_PATH, DEFAULT_SETUPS_PATH
     global SUPABASE_URL, SUPABASE_KEY, DISCORD_WEBHOOK_URL
+    global ENABLED_MODULES, APP_LANGUAGE
     ENV_VARS = load_or_create_env()
     SERVER_PATH = ENV_VARS["ACC_SERVER_PATH"]
     DEFAULT_MOTEC_PATH = ENV_VARS["ACC_MOTEC_PATH"]
@@ -100,6 +129,8 @@ def reload_env():
     SUPABASE_URL = ENV_VARS.get("SUPABASE_URL", "")
     SUPABASE_KEY = ENV_VARS.get("SUPABASE_KEY", "")
     DISCORD_WEBHOOK_URL = ENV_VARS.get("DISCORD_WEBHOOK_URL", "")
+    ENABLED_MODULES = _parse_enabled_modules(ENV_VARS.get("ENABLED_MODULES", ""))
+    APP_LANGUAGE = ENV_VARS.get("APP_LANGUAGE", DEFAULT_LANGUAGE)
     return ENV_VARS
 
 
@@ -110,6 +141,8 @@ DEFAULT_SETUPS_PATH = ENV_VARS["ACC_SETUPS_PATH"]
 SUPABASE_URL = ENV_VARS.get("SUPABASE_URL", "")
 SUPABASE_KEY = ENV_VARS.get("SUPABASE_KEY", "")
 DISCORD_WEBHOOK_URL = ENV_VARS.get("DISCORD_WEBHOOK_URL", "")
+ENABLED_MODULES = _parse_enabled_modules(ENV_VARS.get("ENABLED_MODULES", ""))
+APP_LANGUAGE = ENV_VARS.get("APP_LANGUAGE", DEFAULT_LANGUAGE)
 
 try:
     import PyQt6.QtWidgets  # noqa: F401 - so para falhar cedo com mensagem amigavel

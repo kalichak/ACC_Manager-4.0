@@ -22,6 +22,7 @@ from PyQt6.QtGui import QPixmap, QFont
 from config import (
     TRACKS_DATABASE, CAR_NAMES_MAPPING, ASSETS_DIR, SUPPORTED_IMAGE_EXTENSIONS
 )
+from ui.i18n import t
 
 
 class ServerTabMixin:
@@ -31,15 +32,15 @@ class ServerTabMixin:
         main_layout = QHBoxLayout()
 
         left_layout = QVBoxLayout()
-        box_general = QGroupBox("Servidor & Pista")
+        box_general = QGroupBox(t("box_general_title"))
         gen_layout = QVBoxLayout()
-        gen_layout.addWidget(QLabel("Nome do Servidor:"))
+        gen_layout.addWidget(QLabel(t("label_server_name")))
         self.input_name = QLineEdit("LAN Radmin Session")
         gen_layout.addWidget(self.input_name)
-        gen_layout.addWidget(QLabel("Senha de Acesso:"))
+        gen_layout.addWidget(QLabel(t("label_password")))
         self.input_pass = QLineEdit()
         gen_layout.addWidget(self.input_pass)
-        gen_layout.addWidget(QLabel("Selecione a Pista:"))
+        gen_layout.addWidget(QLabel(t("label_select_track")))
         self.combo_track = QComboBox()
         for track_id, track_display in TRACKS_DATABASE.items():
             self.combo_track.addItem(track_display, track_id)
@@ -49,40 +50,40 @@ class ServerTabMixin:
         left_layout.addWidget(box_general)
 
         sessions_weather_layout = QHBoxLayout()
-        box_sessions = QGroupBox("Sessoes & Horario")
+        box_sessions = QGroupBox(t("box_sessions_title"))
         sess_layout = QVBoxLayout()
 
-        lbl_q = QHBoxLayout(); lbl_q.addWidget(QLabel("Qualy (min):"))
+        lbl_q = QHBoxLayout(); lbl_q.addWidget(QLabel(t("label_qualy")))
         self.spin_q = QSpinBox(); self.spin_q.setRange(5, 180); self.spin_q.setValue(15)
         lbl_q.addWidget(self.spin_q); sess_layout.addLayout(lbl_q)
 
-        lbl_r = QHBoxLayout(); lbl_r.addWidget(QLabel("Race (min):"))
+        lbl_r = QHBoxLayout(); lbl_r.addWidget(QLabel(t("label_race")))
         self.spin_r = QSpinBox(); self.spin_r.setRange(5, 360); self.spin_r.setValue(20)
         lbl_r.addWidget(self.spin_r); sess_layout.addLayout(lbl_r)
 
-        lbl_h = QHBoxLayout(); lbl_h.addWidget(QLabel("Hora da Corrida:"))
+        lbl_h = QHBoxLayout(); lbl_h.addWidget(QLabel(t("label_race_hour")))
         self.spin_hour = QSpinBox(); self.spin_hour.setRange(0, 23); self.spin_hour.setValue(14)
         lbl_h.addWidget(self.spin_hour); sess_layout.addLayout(lbl_h)
 
         box_sessions.setLayout(sess_layout)
         sessions_weather_layout.addWidget(box_sessions)
 
-        box_weather = QGroupBox("Clima da Pista")
+        box_weather = QGroupBox(t("box_weather_title"))
         weather_layout = QVBoxLayout()
 
-        lbl_temp = QHBoxLayout(); lbl_temp.addWidget(QLabel("Temperatura (C):"))
+        lbl_temp = QHBoxLayout(); lbl_temp.addWidget(QLabel(t("label_temperature")))
         self.spin_temp = QSpinBox(); self.spin_temp.setRange(10, 40); self.spin_temp.setValue(22)
         lbl_temp.addWidget(self.spin_temp); weather_layout.addLayout(lbl_temp)
 
-        lbl_cloud = QHBoxLayout(); lbl_cloud.addWidget(QLabel("Nuvens (0.0 a 1.0):"))
+        lbl_cloud = QHBoxLayout(); lbl_cloud.addWidget(QLabel(t("label_clouds")))
         self.spin_cloud = QDoubleSpinBox(); self.spin_cloud.setRange(0.0, 1.0); self.spin_cloud.setSingleStep(0.1); self.spin_cloud.setValue(0.1)
         lbl_cloud.addWidget(self.spin_cloud); weather_layout.addLayout(lbl_cloud)
 
-        lbl_rain = QHBoxLayout(); lbl_rain.addWidget(QLabel("Chuva (0.0 a 1.0):"))
+        lbl_rain = QHBoxLayout(); lbl_rain.addWidget(QLabel(t("label_rain")))
         self.spin_rain = QDoubleSpinBox(); self.spin_rain.setRange(0.0, 1.0); self.spin_rain.setSingleStep(0.1); self.spin_rain.setValue(0.0)
         lbl_rain.addWidget(self.spin_rain); weather_layout.addLayout(lbl_rain)
 
-        lbl_rnd = QHBoxLayout(); lbl_rnd.addWidget(QLabel("Aleatoriedade (0 a 7):"))
+        lbl_rnd = QHBoxLayout(); lbl_rnd.addWidget(QLabel(t("label_randomness")))
         self.spin_random = QSpinBox(); self.spin_random.setRange(0, 7); self.spin_random.setValue(1)
         lbl_rnd.addWidget(self.spin_random); weather_layout.addLayout(lbl_rnd)
 
@@ -90,38 +91,38 @@ class ServerTabMixin:
         sessions_weather_layout.addWidget(box_weather)
         left_layout.addLayout(sessions_weather_layout)
 
-        box_rules = QGroupBox("Regras & Slots")
+        box_rules = QGroupBox(t("box_rules_title"))
         rules_layout = QVBoxLayout()
         slots_rating_layout = QHBoxLayout()
-        slots_rating_layout.addWidget(QLabel("Slots:"))
+        slots_rating_layout.addWidget(QLabel(t("label_slots")))
         self.spin_slots = QSpinBox(); self.spin_slots.setRange(1, 30); self.spin_slots.setValue(30)
         slots_rating_layout.addWidget(self.spin_slots)
-        slots_rating_layout.addWidget(QLabel(" TM:"))
+        slots_rating_layout.addWidget(QLabel(t("label_tm")))
         self.spin_track_medal = QSpinBox(); self.spin_track_medal.setRange(0, 3); self.spin_track_medal.setValue(0)
         slots_rating_layout.addWidget(self.spin_track_medal)
-        slots_rating_layout.addWidget(QLabel(" SA:"))
+        slots_rating_layout.addWidget(QLabel(t("label_sa")))
         self.spin_safety = QSpinBox(); self.spin_safety.setRange(0, 99); self.spin_safety.setValue(0)
         slots_rating_layout.addWidget(self.spin_safety)
         rules_layout.addLayout(slots_rating_layout)
 
-        self.chk_register_to_lobby = QCheckBox("Registrar no lobby (Servidor Publico)")
+        self.chk_register_to_lobby = QCheckBox(t("chk_lobby"))
         rules_layout.addWidget(self.chk_register_to_lobby)
-        self.chk_reset_current = QCheckBox("Limpar pasta 'current' antes de iniciar (Evita bugs)")
+        self.chk_reset_current = QCheckBox(t("chk_reset"))
         self.chk_reset_current.setChecked(True)
         rules_layout.addWidget(self.chk_reset_current)
         box_rules.setLayout(rules_layout)
         left_layout.addWidget(box_rules)
 
         buttons_layout = QHBoxLayout()
-        self.btn_save = QPushButton("Salvar Settings")
+        self.btn_save = QPushButton(t("btn_save_settings"))
         self.btn_save.clicked.connect(self.save_ui_settings)
         buttons_layout.addWidget(self.btn_save)
-        self.btn_start = QPushButton("Iniciar Servidor")
+        self.btn_start = QPushButton(t("btn_start_server"))
         self.btn_start.setObjectName("btn_start")
         self.btn_start.clicked.connect(self.handle_start_server)
         buttons_layout.addWidget(self.btn_start)
         left_layout.addLayout(buttons_layout)
-        self.btn_reset = QPushButton("Fechar Servidor")
+        self.btn_reset = QPushButton(t("btn_stop_server"))
         self.btn_reset.setObjectName("btn_reset")
         self.btn_reset.clicked.connect(self.handle_reset_server)
         left_layout.addWidget(self.btn_reset)
@@ -129,7 +130,7 @@ class ServerTabMixin:
         main_layout.addLayout(left_layout, stretch=1)
 
         right_layout = QVBoxLayout()
-        box_preview = QGroupBox("Circuito")
+        box_preview = QGroupBox(t("box_circuit_title"))
         preview_layout = QVBoxLayout()
         self.track_img_label = ResizableImageLabel()
         self.track_img_label.setStyleSheet("background-color: #09090a; border: 1px dashed #323238; border-radius: 6px;")
@@ -163,8 +164,8 @@ class ServerTabMixin:
             if max_slots > 10 and is_public:
                 if track_medal < 3 or safety_rating < 70:
                     reply = QMessageBox.warning(
-                        self, "Aviso de Limitacao",
-                        "Servidores publicos exigem 3 TM e 70 SA para mais de 10 carros. Deseja iniciar?",
+                        self, t("public_server_warning_title"),
+                        t("public_server_warning_message"),
                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No
                     )
                     if reply == QMessageBox.StandardButton.No: return
@@ -177,22 +178,22 @@ class ServerTabMixin:
                 hour=self.spin_hour.value(), temp=self.spin_temp.value(),
                 cloud=self.spin_cloud.value(), rain=self.spin_rain.value(), randomness=self.spin_random.value()
             )
-            QMessageBox.information(self, "Sucesso", f"Servidor iniciado com a pista {track_id.upper()}!")
+            QMessageBox.information(self, t("server_start_success_title"), t("server_start_success_message", track=track_id.upper()))
             self.discord.notify_server_started(
                 server_name=self.input_name.text() or "Servidor LAN",
                 track_display=TRACKS_DATABASE.get(track_id, track_id),
                 slots=max_slots,
             )
         except Exception as e:
-            QMessageBox.critical(self, "Erro ao Iniciar", str(e))
+            QMessageBox.critical(self, t("server_start_error_title"), str(e))
 
     def handle_reset_server(self):
         try:
             self.server.stop_server()
-            QMessageBox.information(self, "Servidor Finalizado", "accServer.exe foi fechado.")
+            QMessageBox.information(self, t("server_closed_title"), t("server_closed_message"))
             self.discord.notify_server_stopped(server_name=self.input_name.text() or "Servidor LAN")
         except Exception as e:
-            QMessageBox.critical(self, "Erro", str(e))
+            QMessageBox.critical(self, t("server_stop_error_title"), str(e))
 
     def update_track_preview(self):
         track_id = self.combo_track.currentData()
@@ -204,7 +205,7 @@ class ServerTabMixin:
                 self.track_img_label.setPixmap(pixmap)
                 return
         self.track_img_label.setPixmap(QPixmap())
-        self.track_img_label.setText(f"[Sem imagem disponivel para {track_id}]")
+        self.track_img_label.setText(t("no_track_image", track=track_id))
 
     def _find_track_image(self, track_id):
         if not track_id: return None
