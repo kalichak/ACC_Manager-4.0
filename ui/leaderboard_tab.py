@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
 )
 
 from config import TRACKS_DATABASE, CAR_NAMES_MAPPING
+from ui.i18n import ui, t
 
 
 class LeaderboardTabMixin:
@@ -20,21 +21,21 @@ class LeaderboardTabMixin:
         tab = QWidget()
         layout = QVBoxLayout()
 
-        config_box = QGroupBox("Sua Identidade")
+        config_box = QGroupBox(ui("Sua Identidade"))
         config_layout = QHBoxLayout()
-        config_layout.addWidget(QLabel("Seu nome de piloto:"))
+        config_layout.addWidget(QLabel(ui("Seu nome de piloto:")))
         self.input_driver_name = QLineEdit()
         self.input_driver_name.setPlaceholderText("Ex: Joao Silva")
         self.input_driver_name.editingFinished.connect(lambda: self.save_ui_settings(silent=True))
         config_layout.addWidget(self.input_driver_name, stretch=1)
 
-        status_text = "Conectado" if self.leaderboard.enabled else "Nao configurado (defina SUPABASE_URL e SUPABASE_KEY no .env)"
+        status_text = t("leaderboard_status_connected") if self.leaderboard.enabled else t("leaderboard_status_disconnected")
         status_color = "#04d361" if self.leaderboard.enabled else "#ff4b3e"
-        self.leaderboard_status_label = QLabel(f"Ranking: {status_text}")
+        self.leaderboard_status_label = QLabel(status_text)
         self.leaderboard_status_label.setStyleSheet(f"color: {status_color}; font-weight: bold;")
         config_layout.addWidget(self.leaderboard_status_label)
 
-        discord_text = "Discord conectado" if self.discord.enabled else "Discord nao configurado (defina DISCORD_WEBHOOK_URL no .env)"
+        discord_text = t("discord_status_connected") if self.discord.enabled else t("discord_status_disconnected")
         discord_color = "#04d361" if self.discord.enabled else "#a8a8b3"
         self.discord_status_label = QLabel(discord_text)
         self.discord_status_label.setStyleSheet(f"color: {discord_color}; font-weight: bold;")
@@ -43,36 +44,36 @@ class LeaderboardTabMixin:
         layout.addWidget(config_box)
 
         top_bar = QHBoxLayout()
-        btn_refresh_lb = QPushButton("Atualizar Ranking")
+        btn_refresh_lb = QPushButton(ui("Atualizar Ranking"))
         btn_refresh_lb.clicked.connect(self.refresh_leaderboard_table)
         top_bar.addWidget(btn_refresh_lb)
 
-        btn_submit_lb = QPushButton("Enviar Meus Melhores Tempos (MoTeC)")
+        btn_submit_lb = QPushButton(ui("Enviar Meus Melhores Tempos (MoTeC)"))
         btn_submit_lb.setStyleSheet("background-color: #04d361; color: #000;")
         btn_submit_lb.clicked.connect(self.submit_my_best_laps)
         top_bar.addWidget(btn_submit_lb)
 
         self.lb_car_filter = QComboBox()
-        self.lb_car_filter.addItem("Todos os carros", None)
+        self.lb_car_filter.addItem(ui("Todos os carros"), None)
         for car_display in sorted(set(CAR_NAMES_MAPPING.values())):
             self.lb_car_filter.addItem(car_display, car_display)
         self.lb_car_filter.currentIndexChanged.connect(self.refresh_leaderboard_table)
-        top_bar.addWidget(QLabel("Carro:"))
+        top_bar.addWidget(QLabel(ui("Carro:")))
         top_bar.addWidget(self.lb_car_filter)
 
         self.lb_track_filter = QComboBox()
-        self.lb_track_filter.addItem("Todas as pistas", None)
+        self.lb_track_filter.addItem(ui("Todas as pistas"), None)
         for track_id, track_display in TRACKS_DATABASE.items():
             self.lb_track_filter.addItem(track_display, track_id)
         self.lb_track_filter.currentIndexChanged.connect(self.refresh_leaderboard_table)
-        top_bar.addWidget(QLabel("Pista:"))
+        top_bar.addWidget(QLabel(ui("Pista:")))
         top_bar.addWidget(self.lb_track_filter)
         top_bar.addStretch()
         layout.addLayout(top_bar)
 
         self.table_leaderboard = QTableWidget(0, 6)
         self.table_leaderboard.setHorizontalHeaderLabels(
-            ["#", "Piloto", "Carro", "Pista", "Melhor Volta", "Enviado em"]
+            ["#", ui("Piloto"), ui("Carro"), ui("Pista"), ui("Melhor Volta"), ui("Enviado em")]
         )
         self.table_leaderboard.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.table_leaderboard)
@@ -90,19 +91,19 @@ class LeaderboardTabMixin:
 
     def submit_my_best_laps(self):
         if not self.leaderboard.enabled:
-            QMessageBox.warning(self, "Ranking nao configurado",
+            QMessageBox.warning(self, ui("Ranking nao configurado"),
                                  "Defina SUPABASE_URL e SUPABASE_KEY no arquivo .env para usar o ranking compartilhado.\n"
                                  "Veja as instrucoes em core/leaderboard_client.py.")
             return
 
         driver_name = self.input_driver_name.text().strip()
         if not driver_name:
-            QMessageBox.warning(self, "Aviso", "Preencha seu nome de piloto antes de enviar.")
+            QMessageBox.warning(self, ui("Aviso"), ui("Preencha seu nome de piloto antes de enviar."))
             return
 
         laps = self.motec.get_best_laps()
         if not laps:
-            QMessageBox.information(self, "Sem dados", "Nenhuma volta encontrada na pasta do MoTeC.")
+            QMessageBox.information(self, ui("Sem dados"), ui("Nenhuma volta encontrada na pasta do MoTeC."))
             return
 
         best_per_combo = {}
@@ -151,7 +152,7 @@ class LeaderboardTabMixin:
                 failed += 1
 
         self.refresh_leaderboard_table()
-        QMessageBox.information(self, "Envio concluido",
+        QMessageBox.information(self, ui("Envio concluido"),
                                  f"{sent} tempo(s) enviado(s) com sucesso.\n{failed} falha(s).")
 
     def refresh_leaderboard_table(self):
@@ -162,7 +163,7 @@ class LeaderboardTabMixin:
         try:
             rows = self.leaderboard.fetch_raw(track_id=track_id, car_id=car_id)
         except Exception as e:
-            QMessageBox.critical(self, "Erro ao buscar ranking", str(e))
+            QMessageBox.critical(self, ui("Erro ao buscar ranking"), str(e))
             return
 
         best_rows = self.leaderboard.best_per_driver(rows)

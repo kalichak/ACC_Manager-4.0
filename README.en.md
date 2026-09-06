@@ -2,7 +2,7 @@
 
 [Português (BR)](README.md) | [English](README.en.md) | [Deutsch](README.de.md)
 
-> Note: the full English translation is still in progress and will be completed soon. This file may not yet match the latest Portuguese version exactly.
+> The English translation is complete.
 
 Free and open-source desktop application for managing **Assetto Corsa
 Competizione (ACC)** LAN servers.
