@@ -14,3 +14,4 @@ __pycache__/
 build/
 dist/
 *.spec
+ui_settings.json

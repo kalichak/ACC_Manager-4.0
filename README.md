@@ -1,5 +1,7 @@
 # ACC Manager
 
+[Português (BR)](README.md) | [English](README.en.md) | [Deutsch](README.de.md)
+
 Aplicativo desktop gratuito e open source para gerenciamento de servidores
 LAN do **Assetto Corsa Competizione (ACC)**.
 
@@ -27,6 +29,12 @@ as notificações via Discord.
   - Publica melhores tempos em uma tabela compartilhada no Supabase.
   - Filtra resultados por carro e pista.
   - Mantém o histórico de voltas e o melhor tempo de cada piloto.
+
+- **Módulos e idiomas**
+  - Ative ou desative as abas de servidor, telemetria, setups e ranking
+    individualmente nas configurações, sem reiniciar o programa.
+  - Troque o idioma da interface em tempo real entre português, inglês e
+    alemão.
 
 ## Requisitos
 
@@ -141,6 +149,13 @@ Antes de abrir um pull request:
 2. Mantenha credenciais e arquivos `.env` fora do commit.
 3. Teste a aplicação e execute `python -m compileall -q config.py core ui main.py`.
 4. Explique no pull request o que foi alterado e como testar.
+
+## Novas implementações
+
+As versões recentes reorganizaram a aplicação em módulos independentes,
+adicionaram seleção de idioma em tempo real e permitiram ocultar os módulos
+que não serão usados. A configuração é preservada no `.env`, enquanto os
+campos da interface continuam salvos em `ui_settings.json` local.
 
 ## Licença do ACC Manager
 
