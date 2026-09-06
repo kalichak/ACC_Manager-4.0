@@ -1,0 +1,40 @@
+name: Bug report
+description: Reportar um comportamento incorreto ou uma falha reproduzível
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Não inclua credenciais, webhooks, arquivos `.env`, screenshots de configurações ou telemetria pessoal.
+  - type: input
+    id: version
+    attributes:
+      label: Versão/commit
+      description: Informe a versão ou o commit usado.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      description: Liste os passos mínimos.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamento observado
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Ambiente
+      description: Windows, Python, ACC/MoTeC quando relevante.

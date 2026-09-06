@@ -2,6 +2,14 @@
 
 [Português (BR)](README.md) | [English](README.en.md) | [Deutsch](README.de.md)
 
+## Para contribuidores
+
+- [Comece aqui](docs/START_HERE.md)
+- [Guia de contribuição](CONTRIBUTING.md)
+- [Arquitetura](docs/ARCHITECTURE.md)
+- [Roadmap](ROADMAP.md)
+- [Mapa de contribuidores](docs/CONTRIBUTOR_MAP.md)
+
 Aplicativo desktop gratuito e open source para gerenciamento de servidores
 LAN do **Assetto Corsa Competizione (ACC)**.
 

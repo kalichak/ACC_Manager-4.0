@@ -1,0 +1,27 @@
+name: Feature request
+description: Sugerir uma melhoria compatível com a arquitetura atual
+title: "[Feature]: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema ou necessidade
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta
+      description: Explique o comportamento desejado e o módulo afetado.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+  - type: textarea
+    id: scope
+    attributes:
+      label: Impacto e limitações
+      description: Inclua integrações externas, dados ou compatibilidade.
