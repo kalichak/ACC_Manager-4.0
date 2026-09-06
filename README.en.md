@@ -2,7 +2,7 @@
 
 [Português (BR)](README.md) | [English](README.en.md) | [Deutsch](README.de.md)
 
-> Note: this English translation is still in progress and may not yet match the latest Portuguese version exactly.
+> Note: the full English translation is still in progress and will be completed soon. This file may not yet match the latest Portuguese version exactly.
 
 Free and open-source desktop application for managing **Assetto Corsa
 Competizione (ACC)** LAN servers.
@@ -31,7 +31,6 @@ management, friends leaderboard and Discord notifications in one interface.
 - **Optional modules and languages:** enable or hide each module in Settings
   without restarting, and switch the interface between Portuguese, English and
   German at runtime.
-
 ## Requirements
 
 - Windows 10 or later.

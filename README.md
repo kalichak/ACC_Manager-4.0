@@ -42,7 +42,6 @@ as notificações via Discord.
     individualmente nas configurações, sem reiniciar o programa.
   - Troque o idioma da interface em tempo real entre português, inglês e
     alemão.
-
 ## Requisitos
 
 - Windows 10 ou superior.
