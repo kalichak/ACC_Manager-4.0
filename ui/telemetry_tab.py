@@ -215,9 +215,16 @@ class TelemetryTabMixin:
         v_weight = lap.get("vehicle_weight", "N/A")
 
         if not lap.get("is_valid", True):
+            glitch_message = ui(
+                "O tempo de {lap_time} em {track} e fisicamente impossivel para um "
+                "carro classe GT3.\nA sessao foi invalidada pelo sistema e recebeu "
+                "Score 0/10.",
+                lap_time=lap["lap_time"],
+                track=lap["track"],
+            ).replace("\n", "<br>")
             html = f"""
             <h3 style="color:#ff3b30;">{ui('ALERTA DE TEMPO IRREAL (GLITCH)')}</h3>
-            <p>{ui('O tempo de {lap_time} em {track} e fisicamente impossivel para um carro classe GT3.\nA sessao foi invalidada pelo sistema e recebeu Score 0/10.', lap_time=lap['lap_time'], track=lap['track']).replace(chr(10), '<br>')}</p>
+            <p>{glitch_message}</p>
             """
             self.motec_details.setHtml(html)
             return
