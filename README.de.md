@@ -2,7 +2,7 @@
 
 [Português (BR)](README.md) | [English](README.en.md) | [Deutsch](README.de.md)
 
-> Hinweis: Die vollständige deutsche Übersetzung ist noch in Arbeit und wird bald fertiggestellt. Diese Datei entspricht möglicherweise noch nicht vollständig der neuesten portugiesischen Version.
+> Die deutsche Übersetzung ist vollständig.
 
 Kostenlose Open-Source-Desktopanwendung zur Verwaltung von LAN-Servern für
 **Assetto Corsa Competizione (ACC)**.

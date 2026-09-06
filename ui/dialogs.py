@@ -4,11 +4,12 @@ carro/pista de destino ao replicar um setup."""
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QComboBox, QLineEdit, QCheckBox, QFormLayout, QDialogButtonBox
 
 from config import CAR_NAMES_MAPPING
+from ui.i18n import ui
 
 class ReplicateDialog(QDialog):
     def __init__(self, cars, tracks, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Replicar Setup")
+        self.setWindowTitle(ui("Replicar Setup"))
         self.resize(400, 200)
 
         layout = QVBoxLayout(self)
@@ -21,13 +22,13 @@ class ReplicateDialog(QDialog):
         self.track_combo.addItems(tracks)
 
         self.name_input = QLineEdit("Setup_Replicado")
-        self.chk_19 = QCheckBox("Adequar pressoes de pneu para ACC v1.9 (-1.0 psi)")
+        self.chk_19 = QCheckBox(ui("Adequar pressoes de pneu para ACC v1.9 (-1.0 psi)"))
         self.chk_19.setChecked(True)
 
         form = QFormLayout()
-        form.addRow("Carro Destino:", self.car_combo)
-        form.addRow("Pista Destino:", self.track_combo)
-        form.addRow("Novo Nome:", self.name_input)
+        form.addRow(ui("Carro Destino:"), self.car_combo)
+        form.addRow(ui("Pista Destino:"), self.track_combo)
+        form.addRow(ui("Novo Nome:"), self.name_input)
 
         layout.addLayout(form)
         layout.addWidget(self.chk_19)
