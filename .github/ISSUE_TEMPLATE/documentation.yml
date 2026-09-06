@@ -1,0 +1,21 @@
+name: Documentation
+description: Sugerir uma correção ou melhoria na documentação
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Arquivo ou seção
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: O que está incorreto ou faltando
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Melhoria proposta

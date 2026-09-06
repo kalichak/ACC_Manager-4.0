@@ -1,0 +1,30 @@
+name: Python quality
+
+on:
+  push:
+    branches: ["main", "feature/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Compile Python sources
+        run: python -m compileall -q config.py core ui main.py test_discord_webhook.py
+      - name: Run automated tests when present
+        shell: pwsh
+        run: |
+          $tests = Get-ChildItem -Recurse -Filter "test_*.py" |
+            Select-String -Pattern "^\s*(def test_|class Test)" -List
+          if ($tests) {
+            python -m pytest -q
+          } else {
+            Write-Host "No automated pytest tests are currently present."
+          }
