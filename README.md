@@ -42,7 +42,8 @@ as notificações via Discord.
     individualmente nas configurações, sem reiniciar o programa.
   - Troque o idioma da interface em tempo real entre português, inglês e
     alemão.
-<img width="927" height="609" alt="image" src="https://github.com/user-attachments/assets/f094ca3e-428d-4e92-9317-094150a9895c" />
+<img width="927" height="607" alt="image" src="https://github.com/user-attachments/assets/f4c2a026-6c4a-403f-8602-8d0914e7dd21" />
+
 
 ## Requisitos
 
