@@ -2,6 +2,8 @@
 
 [Português (BR)](README.md) | [English](README.en.md) | [Deutsch](README.de.md)
 
+> Hinweis: Die vollständige deutsche Übersetzung ist noch in Arbeit und wird bald fertiggestellt. Diese Datei entspricht möglicherweise noch nicht vollständig der neuesten portugiesischen Version.
+
 Kostenlose Open-Source-Desktopanwendung zur Verwaltung von LAN-Servern für
 **Assetto Corsa Competizione (ACC)**.
 
@@ -12,16 +14,28 @@ Oberfläche.
 ## Funktionen
 
 - **LAN- / Radmin-Server:** Strecke, Fahrzeug, Sessions, Wetter und
-  Rennbedingungen konfigurieren sowie den Dedicated Server starten und stoppen.
+  Rennbedingungen konfigurieren, den Dedicated Server starten und stoppen sowie
+  seinen Status überwachen.
+<img width="1279" height="789" alt="SERVER - DE" src="https://github.com/user-attachments/assets/fd34fb56-8f04-45bb-9e16-82a9b74198d1" />
+
 - **Telemetrie:** MoTeC-Sessions und `.ld`-/`.ldx`-Dateien lesen, Rundenzeiten,
-  Geschwindigkeit, Bremsungen, G-Kräfte und Konstanz analysieren.
-- **Setup-Verwaltung:** Setups anzeigen, filtern, bearbeiten und auf andere
-  Fahrzeuge oder Strecken kopieren.
+  Geschwindigkeit, Bremsungen, G-Kräfte und Konstanz analysieren sowie
+  Streckenprofile aktualisieren.
+<img width="1278" height="945" alt="TELEMETRY DE" src="https://github.com/user-attachments/assets/18393002-10c1-47ad-83cd-0c7dad6f8000" />
+
+- **Setup-Verwaltung:** Setups anzeigen, filtern und bearbeiten, auf andere
+  Fahrzeuge oder Strecken kopieren, Reifendrücke für ACC 1.9 anpassen und
+  Setup-Vorschläge erstellen.
+<img width="1280" height="1389" alt="SETUPS DE" src="https://github.com/user-attachments/assets/ab42d7e2-d502-44b0-90a2-23ec0b5f5975" />
+
 - **Rangliste:** Beste Rundenzeiten an Supabase senden, nach Fahrzeug und
-  Strecke filtern und die Historie behalten.
+  Strecke filtern sowie die beste Zeit und Historie jedes Fahrers behalten.
+<img width="1279" height="789" alt="SERVER - DE" src="https://github.com/user-attachments/assets/fd34fb56-8f04-45bb-9e16-82a9b74198d1" />
+
 - **Optionale Module und Sprachen:** Module in den Einstellungen ohne Neustart
   ein- oder ausblenden und die Oberfläche zwischen Portugiesisch, Englisch und
   Deutsch wechseln.
+<img width="927" height="607" alt="LANGUAGES DE" src="https://github.com/user-attachments/assets/f4c2a026-6c4a-403f-8602-8d0914e7dd21" />
 
 ## Voraussetzungen
 

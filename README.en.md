@@ -2,6 +2,8 @@
 
 [Português (BR)](README.md) | [English](README.en.md) | [Deutsch](README.de.md)
 
+> Note: the full English translation is still in progress and will be completed soon. This file may not yet match the latest Portuguese version exactly.
+
 Free and open-source desktop application for managing **Assetto Corsa
 Competizione (ACC)** LAN servers.
 
@@ -12,15 +14,24 @@ management, friends leaderboard and Discord notifications in one interface.
 
 - **LAN / Radmin server:** configure track, car, sessions, weather and race
   conditions; start and stop the dedicated server; monitor its status.
+<img width="1279" height="789" alt="SERVER - EN" src="https://github.com/user-attachments/assets/fd34fb56-8f04-45bb-9e16-82a9b74198d1" />
+
 - **Telemetry:** read MoTeC sessions and `.ld`/`.ldx` files, inspect lap times,
   speed, braking, G-forces and consistency, and update track profiles.
+<img width="1278" height="945" alt="TELEMETRY EN" src="https://github.com/user-attachments/assets/18393002-10c1-47ad-83cd-0c7dad6f8000" />
+
 - **Setup manager:** list, filter, view and edit setups; replicate setups to
   other cars or tracks; adjust ACC 1.9 pressures; create setup suggestions.
+<img width="1280" height="1389" alt="SETUPS EN" src="https://github.com/user-attachments/assets/ab42d7e2-d502-44b0-90a2-23ec0b5f5975" />
+
 - **Leaderboard:** publish best laps to Supabase, filter by car and track, and
   keep each driver's best time and history.
+<img width="1279" height="789" alt="SERVER - EN" src="https://github.com/user-attachments/assets/fd34fb56-8f04-45bb-9e16-82a9b74198d1" />
+
 - **Optional modules and languages:** enable or hide each module in Settings
   without restarting, and switch the interface between Portuguese, English and
   German at runtime.
+<img width="927" height="607" alt="LANGUAGES EN" src="https://github.com/user-attachments/assets/f4c2a026-6c4a-403f-8602-8d0914e7dd21" />
 
 ## Requirements
 

@@ -16,7 +16,6 @@ as notificações via Discord.
   - Configura pista, carro, sessões, clima e condições de corrida.
   - Exibe o status do servidor e envia notificações para o Discord.
  <img width="1279" height="789" alt="SERVER - PT BR" src="https://github.com/user-attachments/assets/fd34fb56-8f04-45bb-9e16-82a9b74198d1" />
- 
 - **Telemetria**
   - Lê sessões gravadas pelo MoTeC.
   - Analisa arquivos `.ld` e `.ldx`.
@@ -42,8 +41,7 @@ as notificações via Discord.
     individualmente nas configurações, sem reiniciar o programa.
   - Troque o idioma da interface em tempo real entre português, inglês e
     alemão.
-<img width="927" height="607" alt="image" src="https://github.com/user-attachments/assets/f4c2a026-6c4a-403f-8602-8d0914e7dd21" />
-
+<img width="927" height="607" alt="LANGUAGES PT-BR" src="https://github.com/user-attachments/assets/f4c2a026-6c4a-403f-8602-8d0914e7dd21" />
 
 ## Requisitos
 
