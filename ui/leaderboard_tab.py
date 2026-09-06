@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
 
 from config import TRACKS_DATABASE, CAR_NAMES_MAPPING
 from ui.i18n import ui, t
+from ui.table_filters import apply_header_filters, install_header_filters, table_item
 
 
 class LeaderboardTabMixin:
@@ -76,6 +77,7 @@ class LeaderboardTabMixin:
             ["#", ui("Piloto"), ui("Carro"), ui("Pista"), ui("Melhor Volta"), ui("Enviado em")]
         )
         self.table_leaderboard.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        install_header_filters(self.table_leaderboard)
         layout.addWidget(self.table_leaderboard)
 
         note = QLabel(
@@ -167,16 +169,39 @@ class LeaderboardTabMixin:
             return
 
         best_rows = self.leaderboard.best_per_driver(rows)
-        self.table_leaderboard.setRowCount(len(best_rows))
-        for i, r in enumerate(best_rows):
-            display_car = r.get("car_id", "")
-            display_track = TRACKS_DATABASE.get(r.get("track_id", ""), r.get("track_id", ""))
-            self.table_leaderboard.setItem(i, 0, QTableWidgetItem(str(i + 1)))
-            self.table_leaderboard.setItem(i, 1, QTableWidgetItem(r.get("driver_name", "")))
-            self.table_leaderboard.setItem(i, 2, QTableWidgetItem(display_car))
-            self.table_leaderboard.setItem(i, 3, QTableWidgetItem(display_track))
-            self.table_leaderboard.setItem(i, 4, QTableWidgetItem(r.get("lap_time_formatted", "")))
-            self.table_leaderboard.setItem(i, 5, QTableWidgetItem(str(r.get("recorded_at", ""))[:16].replace("T", " ")))
+        self.table_leaderboard.setSortingEnabled(False)
+        try:
+            self.table_leaderboard.setRowCount(len(best_rows))
+            for i, r in enumerate(best_rows):
+                display_car = r.get("car_id", "")
+                display_track = TRACKS_DATABASE.get(r.get("track_id", ""), r.get("track_id", ""))
+                self.table_leaderboard.setItem(i, 0, table_item(i + 1, i + 1))
+                self.table_leaderboard.setItem(i, 1, table_item(r.get("driver_name", "")))
+                self.table_leaderboard.setItem(i, 2, table_item(display_car))
+                self.table_leaderboard.setItem(i, 3, table_item(display_track))
+                self.table_leaderboard.setItem(i, 4, table_item(r.get("lap_time_formatted", ""), self._parse_lap_time(r.get("lap_time_seconds"))))
+                recorded_at = str(r.get("recorded_at", ""))[:16].replace("T", " ")
+                self.table_leaderboard.setItem(i, 5, table_item(recorded_at, self._parse_recorded_at(recorded_at)))
+        finally:
+            self.table_leaderboard.setSortingEnabled(True)
+
+        apply_header_filters(self.table_leaderboard)
+
+    @staticmethod
+    def _parse_lap_time(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0.0
+
+    @staticmethod
+    def _parse_recorded_at(value):
+        from datetime import datetime
+
+        try:
+            return datetime.strptime(value, "%Y-%m-%d %H:%M").timestamp()
+        except (TypeError, ValueError, OverflowError):
+            return 0
 
     # ==========================
     # METODOS SERVIDOR E UI

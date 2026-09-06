@@ -18,6 +18,7 @@ from PyQt6.QtGui import QColor, QPixmap
 from core import ld_telemetry_parser
 from ui.server_tab import ResizableImageLabel
 from ui.i18n import ui
+from ui.table_filters import apply_header_filters, install_header_filters, table_item
 
 class TelemetryTabMixin:
 
@@ -58,6 +59,7 @@ class TelemetryTabMixin:
         self.table_motec = QTableWidget(0, 6)
         self.table_motec.setHorizontalHeaderLabels([ui("Pista"), ui("Piloto"), ui("Carro"), ui("Melhor Volta"), ui("Score"), ui("Data")])
         self.table_motec.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        install_header_filters(self.table_motec)
         self.table_motec.itemSelectionChanged.connect(self.show_selected_motec_details)
         splitter.addWidget(self.table_motec)
 
@@ -113,33 +115,48 @@ class TelemetryTabMixin:
                 if t not in track_records or rt < track_records[t]:
                     track_records[t] = rt
 
-        self.table_motec.setRowCount(len(laps))
-        for row, lap in enumerate(laps):
-            rt = lap["raw_time"]
-            if rt < 70.0:
-                lap["is_valid"] = False
-                lap["score"] = 0.0
-            else:
-                lap["is_valid"] = True
-                tr = track_records.get(lap["track"], rt)
-                pace_score = (tr / rt) * 5.0
-                cons_score = min(5.0, lap.get("total_laps", 0) / 2.0)
-                lap["score"] = round(pace_score + cons_score, 1)
+        self.table_motec.setSortingEnabled(False)
+        try:
+            self.table_motec.setRowCount(len(laps))
+            for row, lap in enumerate(laps):
+                rt = lap["raw_time"]
+                if rt < 70.0:
+                    lap["is_valid"] = False
+                    lap["score"] = 0.0
+                else:
+                    lap["is_valid"] = True
+                    tr = track_records.get(lap["track"], rt)
+                    pace_score = (tr / rt) * 5.0
+                    cons_score = min(5.0, lap.get("total_laps", 0) / 2.0)
+                    lap["score"] = round(pace_score + cons_score, 1)
 
-            self.table_motec.setItem(row, 0, QTableWidgetItem(lap["track"]))
-            self.table_motec.setItem(row, 1, QTableWidgetItem(lap["driver"]))
-            self.table_motec.setItem(row, 2, QTableWidgetItem(lap["car"]))
-            self.table_motec.setItem(row, 3, QTableWidgetItem(lap["lap_time"]))
+                self.table_motec.setItem(row, 0, table_item(lap["track"]))
+                self.table_motec.setItem(row, 1, table_item(lap["driver"]))
+                self.table_motec.setItem(row, 2, table_item(lap["car"]))
+                self.table_motec.setItem(row, 3, table_item(lap["lap_time"], rt))
 
-            score_item = QTableWidgetItem(f"{lap['score']}/10")
-            if not lap["is_valid"]:
-                score_item.setForeground(QColor("#ff3b30"))
-            self.table_motec.setItem(row, 4, score_item)
+                score_item = table_item(f"{lap['score']}/10", lap["score"])
+                if not lap["is_valid"]:
+                    score_item.setForeground(QColor("#ff3b30"))
+                self.table_motec.setItem(row, 4, score_item)
 
-            self.table_motec.setItem(row, 5, QTableWidgetItem(lap["date"]))
+                self.table_motec.setItem(row, 5, table_item(lap["date"], self._parse_display_date(lap["date"])))
 
-            # Armazena os dados completos para o display lateral
-            self.table_motec.item(row, 0).setData(Qt.ItemDataRole.UserRole, lap)
+                # Armazena os dados completos para o display lateral
+                self.table_motec.item(row, 0).setData(Qt.ItemDataRole.UserRole, lap)
+        finally:
+            self.table_motec.setSortingEnabled(True)
+
+        apply_header_filters(self.table_motec)
+
+    @staticmethod
+    def _parse_display_date(value):
+        from datetime import datetime
+
+        try:
+            return datetime.strptime(value, "%d/%m/%Y %H:%M").timestamp()
+        except (TypeError, ValueError, OverflowError):
+            return 0
 
     def show_advanced_telemetry(self):
         if not self.table_motec.selectedItems():
@@ -267,6 +284,8 @@ class TelemetryTabMixin:
         if reply == QMessageBox.StandardButton.Yes:
             try:
                 self.motec.delete_telemetry(lap["file_path"])
+                self.table_motec.clearSelection()
+                self.refresh_motec_filters()
                 self.refresh_motec_table()
                 self.motec_img_label.clear()
                 self.motec_details.clear()

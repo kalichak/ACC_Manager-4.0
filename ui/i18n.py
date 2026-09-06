@@ -64,6 +64,8 @@ def ui(text: str, **kwargs) -> str:
 
 
 RAW_TRANSLATIONS = {
+    "Filtrar tabela": {"pt": "Filtrar tabela", "en": "Filter table", "de": "Tabelle filtern"},
+    "Filtrar {column} (vazio remove):": {"pt": "Filtrar {column} (vazio remove):", "en": "Filter {column} (empty clears):", "de": "{column} filtern (leer loescht):"},
     "Recarregar Tempos MoTeC": {"pt": "Recarregar Tempos MoTeC", "en": "Reload MoTeC Laps", "de": "MoTeC-Zeiten neu laden"},
     "Deletar Sessao Selecionada": {"pt": "Deletar Sessao Selecionada", "en": "Delete Selected Session", "de": "Ausgewaehlte Sitzung loeschen"},
     "Telemetria Avancada (.ld)": {"pt": "Telemetria Avancada (.ld)", "en": "Advanced Telemetry (.ld)", "de": "Erweiterte Telemetrie (.ld)"},
