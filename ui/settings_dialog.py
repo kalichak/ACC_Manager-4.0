@@ -20,13 +20,17 @@ de volta para "todos habilitados", entao o pior caso possivel e o app
 nunca abrir sem nenhuma aba.
 """
 
+import json
+
 import requests
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLineEdit, QPushButton,
-    QLabel, QFileDialog, QDialogButtonBox, QMessageBox, QGroupBox, QCheckBox
+    QLabel, QFileDialog, QDialogButtonBox, QMessageBox, QGroupBox, QCheckBox, QComboBox,
+    QTextEdit
 )
 
 import config
+from core.version_manager import AppVersionManager
 from ui.i18n import t
 
 
@@ -47,6 +51,15 @@ class SettingsDialog(QDialog):
 
         paths_box.setLayout(paths_form)
         layout.addWidget(paths_box)
+
+        appearance_box = QGroupBox(t("group_appearance_title"))
+        appearance_form = QFormLayout()
+        self.combo_theme = QComboBox()
+        self.combo_theme.addItem(t("theme_light"), "light")
+        self.combo_theme.addItem(t("theme_dark"), "dark")
+        appearance_form.addRow(t("label_theme"), self.combo_theme)
+        appearance_box.setLayout(appearance_form)
+        layout.addWidget(appearance_box)
 
         integrations_box = QGroupBox(t("group_integrations_title"))
         integ_form = QFormLayout()
@@ -90,6 +103,25 @@ class SettingsDialog(QDialog):
         modules_box.setLayout(modules_layout)
         layout.addWidget(modules_box)
 
+        version_box = QGroupBox(t("group_version_title"))
+        version_layout = QVBoxLayout()
+
+        self.version_status = QLabel(t("version_checking"))
+        self.version_status.setWordWrap(True)
+        version_layout.addWidget(self.version_status)
+
+        self.version_details = QTextEdit()
+        self.version_details.setReadOnly(True)
+        self.version_details.setMaximumHeight(140)
+        version_layout.addWidget(self.version_details)
+
+        btn_refresh_version = QPushButton(t("btn_validate_version"))
+        btn_refresh_version.clicked.connect(self.refresh_version_status)
+        version_layout.addWidget(btn_refresh_version)
+
+        version_box.setLayout(version_layout)
+        layout.addWidget(version_box)
+
         self.status_label = QLabel("")
         self.status_label.setWordWrap(True)
         layout.addWidget(self.status_label)
@@ -126,12 +158,15 @@ class SettingsDialog(QDialog):
         self.input_supabase_url.setText(env.get("SUPABASE_URL", ""))
         self.input_supabase_key.setText(env.get("SUPABASE_KEY", ""))
         self.input_discord_webhook.setText(env.get("DISCORD_WEBHOOK_URL", ""))
+        theme_index = self.combo_theme.findData(env.get("APP_THEME", config.DEFAULT_THEME))
+        self.combo_theme.setCurrentIndex(theme_index if theme_index >= 0 else 0)
 
         enabled = set(config._parse_enabled_modules(env.get("ENABLED_MODULES", "")))
         self.chk_module_server.setChecked("server" in enabled)
         self.chk_module_telemetry.setChecked("telemetry" in enabled)
         self.chk_module_setups.setChecked("setups" in enabled)
         self.chk_module_leaderboard.setChecked("leaderboard" in enabled)
+        self.refresh_version_status()
 
     def test_discord_webhook(self):
         url = self.input_discord_webhook.text().strip()
@@ -150,6 +185,36 @@ class SettingsDialog(QDialog):
         except Exception as e:
             self.status_label.setText(t("discord_test_exception", error=e))
             self.status_label.setStyleSheet("color: #ff4b3e;")
+
+    def refresh_version_status(self):
+        manager = AppVersionManager()
+        manifest = manager.validate_update()
+        branch = manifest.get("branch", "unknown")
+        current = manifest.get("current_version", "unknown")
+        next_version = manifest.get("next_version", current)
+        needs_update = manifest.get("needs_update", False)
+        channel = manifest.get("channel", "development")
+
+        if needs_update:
+            self.version_status.setText(
+                t("version_update_pending", current=current, next_version=next_version, channel=channel)
+            )
+            self.version_status.setStyleSheet("color: #f7b731;")
+        else:
+            self.version_status.setText(t("version_current", current=current, channel=channel))
+            self.version_status.setStyleSheet("color: #04d361;")
+
+        summary = {
+            "branch": branch,
+            "current_version": current,
+            "next_version": next_version,
+            "channel": channel,
+            "needs_update": needs_update,
+            "commit": manifest.get("commit", "unknown"),
+            "changed_files": manifest.get("changed_files", []),
+            "new_files": manifest.get("new_files", []),
+        }
+        self.version_details.setPlainText(json.dumps(summary, ensure_ascii=False, indent=2))
 
     def save_and_close(self):
         selected_modules = []
@@ -170,5 +235,6 @@ class SettingsDialog(QDialog):
             "SUPABASE_KEY": self.input_supabase_key.text().strip(),
             "DISCORD_WEBHOOK_URL": self.input_discord_webhook.text().strip(),
             "ENABLED_MODULES": ",".join(selected_modules),
+            "APP_THEME": self.combo_theme.currentData(),
         })
         self.accept()

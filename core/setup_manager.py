@@ -2,6 +2,7 @@ import os
 import json
 import shutil
 import copy
+import re
 
 class SetupManager:
     def __init__(self, setups_folder=None):
@@ -73,6 +74,81 @@ class SetupManager:
     def delete_setup(self, file_path: str):
         if os.path.exists(file_path):
             os.remove(file_path)
+
+    @staticmethod
+    def normalize_setup_token(value):
+        text = str(value or "").strip().lower()
+        text = re.sub(r"[^a-z0-9]+", "_", text)
+        text = re.sub(r"_+", "_", text).strip("_")
+        return text or "setup"
+
+    def build_standardized_setup_name(self, car: str, track: str, preset_label: str = "setup", variant: str = None):
+        parts = [self.normalize_setup_token(car), self.normalize_setup_token(track)]
+        if preset_label:
+            parts.append(self.normalize_setup_token(preset_label))
+        if variant:
+            parts.append(self.normalize_setup_token(variant))
+        return "_".join(part for part in parts if part)
+
+    def standardize_setup_names(self, folder_path=None):
+        target_folder = folder_path or self.setups_folder
+        if not os.path.exists(target_folder):
+            return []
+
+        changed = []
+        for car_name in sorted(os.listdir(target_folder)):
+            car_dir = os.path.join(target_folder, car_name)
+            if not os.path.isdir(car_dir):
+                continue
+            for track_name in sorted(os.listdir(car_dir)):
+                track_dir = os.path.join(car_dir, track_name)
+                if not os.path.isdir(track_dir):
+                    continue
+                for filename in sorted(os.listdir(track_dir)):
+                    if not filename.lower().endswith(".json"):
+                        continue
+                    file_path = os.path.join(track_dir, filename)
+                    base_name = os.path.splitext(filename)[0]
+                    base_label = base_name.lower()
+                    if "qualy" in base_label:
+                        preset = "qualy"
+                    elif "race" in base_label:
+                        preset = "race"
+                    elif "wet" in base_label:
+                        preset = "wet"
+                    elif "smart" in base_label:
+                        preset = "smart"
+                    else:
+                        preset = "setup"
+
+                    normalized = self.build_standardized_setup_name(car_name, track_name, preset, variant=None)
+                    if base_name.lower() != normalized:
+                        candidate = os.path.join(track_dir, f"{normalized}.json")
+                        unique_candidate = candidate
+                        counter = 1
+                        while os.path.exists(unique_candidate) and os.path.abspath(unique_candidate) != os.path.abspath(file_path):
+                            unique_candidate = os.path.join(track_dir, f"{normalized}_v{counter}.json")
+                            counter += 1
+                        os.rename(file_path, unique_candidate)
+                        changed.append({"from": file_path, "to": unique_candidate})
+        return changed
+
+    def save_setup_with_telemetry(self, setup_path: str, setup_data: dict, car_id: str, track_id: str, telemetry_laps: list = None, notes: str = None):
+        if setup_path and os.path.exists(setup_path):
+            self.save_setup(setup_path, setup_data)
+
+        telemetry_path = os.path.splitext(setup_path)[0] + ".telemetry.json"
+        payload = {
+            "car_id": car_id,
+            "track_id": track_id,
+            "setup_name": os.path.splitext(os.path.basename(setup_path))[0],
+            "saved_at": __import__("datetime").datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            "notes": notes,
+            "laps": telemetry_laps or [],
+        }
+        with open(telemetry_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+        return telemetry_path
 
     def get_unique_filename(self, target_dir: str, base_name: str):
         new_path = os.path.join(target_dir, f"{base_name}.json")

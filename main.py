@@ -14,21 +14,23 @@ dividida em:
 
 import os
 import sys
+import config
 
 try:
-    from PyQt6.QtGui import QIcon
+    from PyQt6.QtGui import QIcon, QFont
     from PyQt6.QtWidgets import QApplication
 except ImportError:
     print("\n[ERRO CRITICO] PyQt6 nao esta instalado no ambiente atual!")
     print("Execute no terminal: pip install -r requirements.txt\n")
     sys.exit(1)
 
-from ui.styles import DARK_STYLE
+from ui.styles import DARK_STYLE, LIGHT_STYLE
 from ui.main_window import ACCManagerApp
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setStyleSheet(DARK_STYLE)
+    app.setFont(QFont("Segoe UI", 10))
+    app.setStyleSheet(LIGHT_STYLE if config.APP_THEME == "light" else DARK_STYLE)
 
     icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "icon.ico")
     if os.path.exists(icon_path):

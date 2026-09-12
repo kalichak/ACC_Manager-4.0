@@ -21,12 +21,16 @@ class LeaderboardTabMixin:
     def create_leaderboard_tab(self):
         tab = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
 
         config_box = QGroupBox(ui("Sua Identidade"))
         config_layout = QHBoxLayout()
+        config_layout.setSpacing(8)
         config_layout.addWidget(QLabel(ui("Seu nome de piloto:")))
         self.input_driver_name = QLineEdit()
         self.input_driver_name.setPlaceholderText("Ex: Joao Silva")
+        self.input_driver_name.setMinimumHeight(34)
         self.input_driver_name.editingFinished.connect(lambda: self.save_ui_settings(silent=True))
         config_layout.addWidget(self.input_driver_name, stretch=1)
 
@@ -45,16 +49,20 @@ class LeaderboardTabMixin:
         layout.addWidget(config_box)
 
         top_bar = QHBoxLayout()
+        top_bar.setSpacing(8)
         btn_refresh_lb = QPushButton(ui("Atualizar Ranking"))
+        btn_refresh_lb.setMinimumHeight(38)
         btn_refresh_lb.clicked.connect(self.refresh_leaderboard_table)
         top_bar.addWidget(btn_refresh_lb)
 
         btn_submit_lb = QPushButton(ui("Enviar Meus Melhores Tempos (MoTeC)"))
+        btn_submit_lb.setMinimumHeight(38)
         btn_submit_lb.setStyleSheet("background-color: #04d361; color: #000;")
         btn_submit_lb.clicked.connect(self.submit_my_best_laps)
         top_bar.addWidget(btn_submit_lb)
 
         self.lb_car_filter = QComboBox()
+        self.lb_car_filter.setMinimumWidth(170)
         self.lb_car_filter.addItem(ui("Todos os carros"), None)
         for car_display in sorted(set(CAR_NAMES_MAPPING.values())):
             self.lb_car_filter.addItem(car_display, car_display)
@@ -63,6 +71,7 @@ class LeaderboardTabMixin:
         top_bar.addWidget(self.lb_car_filter)
 
         self.lb_track_filter = QComboBox()
+        self.lb_track_filter.setMinimumWidth(170)
         self.lb_track_filter.addItem(ui("Todas as pistas"), None)
         for track_id, track_display in TRACKS_DATABASE.items():
             self.lb_track_filter.addItem(track_display, track_id)
@@ -72,21 +81,42 @@ class LeaderboardTabMixin:
         top_bar.addStretch()
         layout.addLayout(top_bar)
 
+        ranking_box = QGroupBox(ui("Ranking do grupo"))
+        ranking_layout = QVBoxLayout()
         self.table_leaderboard = QTableWidget(0, 6)
+        self.table_leaderboard.setMinimumHeight(220)
         self.table_leaderboard.setHorizontalHeaderLabels(
             ["#", ui("Piloto"), ui("Carro"), ui("Pista"), ui("Melhor Volta"), ui("Enviado em")]
         )
         self.table_leaderboard.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         install_header_filters(self.table_leaderboard)
-        layout.addWidget(self.table_leaderboard)
+        ranking_layout.addWidget(self.table_leaderboard)
+        ranking_box.setLayout(ranking_layout)
+        layout.addWidget(ranking_box)
+
+        setups_box = QGroupBox(ui("Setups compartilhados"))
+        setups_layout = QVBoxLayout()
+        self.table_shared_setups = QTableWidget(0, 8)
+        self.table_shared_setups.setMinimumHeight(220)
+        self.table_shared_setups.setHorizontalHeaderLabels(
+            [ui("Autor"), ui("Piloto"), ui("Carro"), ui("Pista"), ui("Setup"), ui("Preset"), ui("Data"), ui("Notas")]
+        )
+        self.table_shared_setups.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        install_header_filters(self.table_shared_setups)
+        setups_layout.addWidget(self.table_shared_setups)
+        setups_box.setLayout(setups_layout)
+        layout.addWidget(setups_box)
 
         note = QLabel(
             "Dica: o ranking mostra o melhor tempo de cada piloto por combinacao de carro+pista. "
-            "Toda sessao enviada fica guardada no historico, entao da pra acompanhar sua evolucao com o tempo."
+            "Na secao abaixo voce acompanha os setups usados por todos no mesmo painel."
         )
         note.setWordWrap(True)
         note.setStyleSheet("color: #a8a8b3; font-size: 12px;")
         layout.addWidget(note)
+
+        self.refresh_leaderboard_table()
+        self.refresh_shared_setups_table()
 
         tab.setLayout(layout)
         return tab
@@ -186,6 +216,43 @@ class LeaderboardTabMixin:
             self.table_leaderboard.setSortingEnabled(True)
 
         apply_header_filters(self.table_leaderboard)
+
+    def refresh_shared_setups_table(self):
+        if not getattr(self, "setup_usage", None) or not self.setup_usage.enabled:
+            self.table_shared_setups.setRowCount(0)
+            return
+
+        try:
+            rows = self.setup_usage.fetch_recent(limit=50)
+        except Exception as exc:
+            QMessageBox.critical(self, ui("Erro ao buscar setups compartilhados"), str(exc))
+            return
+
+        self.table_shared_setups.setSortingEnabled(False)
+        try:
+            self.table_shared_setups.setRowCount(len(rows))
+            for i, row in enumerate(rows):
+                created_by_name = str(row.get("created_by_name") or row.get("driver_name", ""))
+                driver_name = str(row.get("driver_name", ""))
+                car_id = str(row.get("car_id", ""))
+                track_id = str(row.get("track_id", ""))
+                setup_name = str(row.get("setup_name", ""))
+                preset_type = str(row.get("preset_type") or "manual")
+                used_at = str(row.get("used_at", ""))
+                notes = str(row.get("notes") or "")
+
+                self.table_shared_setups.setItem(i, 0, table_item(created_by_name))
+                self.table_shared_setups.setItem(i, 1, table_item(driver_name))
+                self.table_shared_setups.setItem(i, 2, table_item(car_id))
+                self.table_shared_setups.setItem(i, 3, table_item(TRACKS_DATABASE.get(track_id, track_id)))
+                self.table_shared_setups.setItem(i, 4, table_item(setup_name))
+                self.table_shared_setups.setItem(i, 5, table_item(preset_type))
+                self.table_shared_setups.setItem(i, 6, table_item(used_at[:16].replace("T", " ") if used_at else ""))
+                self.table_shared_setups.setItem(i, 7, table_item(notes[:120] if notes else ""))
+        finally:
+            self.table_shared_setups.setSortingEnabled(True)
+
+        apply_header_filters(self.table_shared_setups)
 
     @staticmethod
     def _parse_lap_time(value):

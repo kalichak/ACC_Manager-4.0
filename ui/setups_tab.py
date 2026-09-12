@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QComboBox, QLineEdit, QTableWidget, QTableWidgetItem, QHeaderView,
     QTextEdit, QTreeWidget, QTreeWidgetItem, QSplitter, QSlider, QMessageBox,
-    QGroupBox, QInputDialog
+    QGroupBox, QInputDialog, QCheckBox
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
@@ -92,6 +92,10 @@ class SetupsTabMixin:
         btn_w.clicked.connect(lambda: self.apply_preset("wet"))
         factory_layout.addWidget(btn_w)
 
+        self.save_telemetry_checkbox = QCheckBox(ui("Salvar voltas de telemetria junto"))
+        self.save_telemetry_checkbox.setChecked(True)
+        factory_layout.addWidget(self.save_telemetry_checkbox)
+
         factory_box.setLayout(factory_layout)
         tree_container.addWidget(factory_box)
 
@@ -126,6 +130,10 @@ class SetupsTabMixin:
         self.creator_aggr_label.setStyleSheet("font-weight: bold; color: #ff3b30;")
         creator_layout.addWidget(self.creator_aggr_label)
 
+        self.creator_save_telemetry_checkbox = QCheckBox(ui("Salvar dados de telemetria desta sessão"))
+        self.creator_save_telemetry_checkbox.setChecked(True)
+        creator_layout.addWidget(self.creator_save_telemetry_checkbox)
+
         btn_generate_smart = QPushButton(ui("Gerar Setup Inteligente a partir do Selecionado"))
         btn_generate_smart.setStyleSheet("background-color: #ff3b30; color: #fff;")
         btn_generate_smart.clicked.connect(self.generate_smart_setup)
@@ -134,6 +142,10 @@ class SetupsTabMixin:
         btn_calibrate = QPushButton(ui("Calibrar Pistas com Meus Dados Reais (MoTeC)"))
         btn_calibrate.clicked.connect(self.calibrate_track_speeds)
         creator_layout.addWidget(btn_calibrate)
+
+        btn_standardize = QPushButton(ui("Padronizar nomes dos setups da pasta"))
+        btn_standardize.clicked.connect(self.standardize_existing_setup_names)
+        creator_layout.addWidget(btn_standardize)
 
         creator_box.setLayout(creator_layout)
         tree_container.addWidget(creator_box)
@@ -150,6 +162,21 @@ class SetupsTabMixin:
         btn_replicate = QPushButton(ui("Replicar p/ Carro"))
         btn_replicate.clicked.connect(self.replicate_setup)
         tree_buttons.addWidget(btn_replicate)
+
+        btn_register_usage = QPushButton(ui("Registrar Uso no Supabase"))
+        btn_register_usage.setStyleSheet("background-color: #007aff; color: #fff;")
+        btn_register_usage.clicked.connect(self.record_selected_setup_usage)
+        tree_buttons.addWidget(btn_register_usage)
+
+        btn_share_setup = QPushButton(ui("Compartilhar JSON no Supabase"))
+        btn_share_setup.setStyleSheet("background-color: #4f8ef7; color: #fff;")
+        btn_share_setup.clicked.connect(self.share_selected_setup_json)
+        tree_buttons.addWidget(btn_share_setup)
+
+        btn_download_shared = QPushButton(ui("Baixar Setup do Amigo"))
+        btn_download_shared.setStyleSheet("background-color: #7a5af8; color: #fff;")
+        btn_download_shared.clicked.connect(self.download_shared_setup_json)
+        tree_buttons.addWidget(btn_download_shared)
         tree_container.addLayout(tree_buttons)
 
         self.setup_tree = QTreeWidget()
@@ -165,7 +192,7 @@ class SetupsTabMixin:
         advisor_container = QVBoxLayout()
         self.setup_advisor = QTextEdit()
         self.setup_advisor.setReadOnly(True)
-        self.setup_advisor.setStyleSheet("background-color: #09090a; border: 1px solid #323238; border-radius: 6px; padding: 12px; font-size: 14px;")
+        self.setup_advisor.setStyleSheet("border: 1px solid #d5dce3; border-radius: 6px; padding: 12px; font-size: 14px;")
         self.setup_advisor.setHtml(f"<h3>{ui('Engenheiro de Pista Virtual')}</h3><p>{ui('Selecione um setup para avaliar o impacto aerodinamico e mecanico na sua seguranca vs pace.')}</p>")
         advisor_container.addWidget(self.setup_advisor)
 
@@ -345,31 +372,192 @@ class SetupsTabMixin:
             except Exception as e:
                 QMessageBox.critical(self, ui("Erro"), str(e))
 
+    def record_selected_setup_usage(self):
+        if not self._current_setup_path or not self._current_setup_dict:
+            QMessageBox.warning(self, ui("Aviso"), ui("Selecione um setup primeiro para registrar o uso."))
+            return
+
+        row = self.table_setups.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, ui("Aviso"), ui("Selecione um setup na tabela primeiro."))
+            return
+
+        setup_meta = self.table_setups.item(row, 0).data(Qt.ItemDataRole.UserRole)
+        if not setup_meta:
+            QMessageBox.warning(self, ui("Aviso"), ui("Dados do setup selecionado nao encontrados."))
+            return
+
+        driver_name = getattr(self, "input_driver_name", None)
+        driver_name = driver_name.text().strip() if driver_name is not None else "Desconhecido"
+        if not driver_name:
+            driver_name = "Desconhecido"
+
+        created_by_name = driver_name
+        created_by = getattr(self, "supabase_user_id", None) or "local-user"
+
+        preset_type = "manual"
+        notes = f"Usado via menu de setups | Carro: {setup_meta['car']} | Pista: {setup_meta['track']}"
+
+        try:
+            self.setup_usage.record_usage(
+                driver_name=driver_name,
+                car_id=setup_meta["car"],
+                track_id=setup_meta["track"],
+                setup_name=os.path.basename(self._current_setup_path).replace(".json", ""),
+                setup_file_path=self._current_setup_path,
+                preset_type=preset_type,
+                notes=notes,
+                setup_json=self._current_setup_dict,
+                created_by=created_by,
+                created_by_name=created_by_name,
+            )
+            QMessageBox.information(self, ui("Sucesso"), ui("Uso do setup registrado no Supabase."))
+        except Exception as exc:
+            QMessageBox.critical(self, ui("Erro"), str(exc))
+
+    def share_selected_setup_json(self):
+        if not self._current_setup_path or not self._current_setup_dict:
+            QMessageBox.warning(self, ui("Aviso"), ui("Selecione um setup primeiro para compartilhar."))
+            return
+
+        row = self.table_setups.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, ui("Aviso"), ui("Selecione um setup na tabela primeiro."))
+            return
+
+        setup_meta = self.table_setups.item(row, 0).data(Qt.ItemDataRole.UserRole)
+        if not setup_meta:
+            QMessageBox.warning(self, ui("Aviso"), ui("Dados do setup selecionado nao encontrados."))
+            return
+
+        driver_name = getattr(self, "input_driver_name", None)
+        driver_name = driver_name.text().strip() if driver_name is not None else "Desconhecido"
+        if not driver_name:
+            driver_name = "Desconhecido"
+
+        created_by_name = driver_name
+        created_by = getattr(self, "supabase_user_id", None) or "local-user"
+
+        setup_name = os.path.basename(self._current_setup_path).replace(".json", "")
+        notes = f"JSON compartilhado de {setup_name} | {setup_meta['car']} | {setup_meta['track']}"
+
+        try:
+            self.setup_usage.record_usage(
+                driver_name=driver_name,
+                car_id=setup_meta["car"],
+                track_id=setup_meta["track"],
+                setup_name=setup_name,
+                setup_file_path=self._current_setup_path,
+                preset_type="shared_json",
+                notes=notes,
+                setup_json=self._current_setup_dict,
+                created_by=created_by,
+                created_by_name=created_by_name,
+            )
+            QMessageBox.information(self, ui("Sucesso"), ui("JSON do setup enviado para compartilhamento com os amigos."))
+        except Exception as exc:
+            QMessageBox.critical(self, ui("Erro"), str(exc))
+
+    def download_shared_setup_json(self):
+        if not self.setup_usage or not self.setup_usage.enabled:
+            QMessageBox.warning(self, ui("Aviso"), ui("Supabase nao configurado. Configure URL e KEY primeiro."))
+            return
+
+        driver_name, ok = QInputDialog.getText(self, ui("Baixar setup do amigo"), ui("Nome do piloto que compartilhou:"))
+        if not ok or not driver_name.strip():
+            return
+
+        row = self.table_setups.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, ui("Aviso"), ui("Selecione um setup alvo na tabela para salvar o arquivo baixado."))
+            return
+
+        setup_meta = self.table_setups.item(row, 0).data(Qt.ItemDataRole.UserRole)
+        if not setup_meta:
+            QMessageBox.warning(self, ui("Aviso"), ui("Dados do setup alvo nao encontrados."))
+            return
+
+        try:
+            shared = self.setup_usage.download_shared_setup(driver_name.strip(), setup_meta["car"], setup_meta["track"])
+            if not shared:
+                QMessageBox.information(self, ui("Nada encontrado"), ui("Nenhum JSON compartilhado foi encontrado para este piloto, carro e pista."))
+                return
+
+            payload = shared.get("setup_json") or {}
+            if not isinstance(payload, dict) or not payload:
+                QMessageBox.warning(self, ui("Aviso"), ui("O registro compartilhado nao possui JSON valido."))
+                return
+
+            target_path = os.path.join(self.setup_mgr.setups_folder, setup_meta["car"], setup_meta["track"], f"{shared.get('setup_name', 'shared_setup')}.json")
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            with open(target_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=4, ensure_ascii=False)
+
+            self.refresh_setups_table()
+            QMessageBox.information(self, ui("Setup baixado"), ui("Setup compartilhado importado com sucesso na pasta local."))
+        except Exception as exc:
+            QMessageBox.critical(self, ui("Erro"), str(exc))
+
+    def standardize_existing_setup_names(self):
+        try:
+            changed = self.setup_mgr.standardize_setup_names()
+            if not changed:
+                QMessageBox.information(self, ui("Padronizacao"), ui("Todos os nomes ja estao padronizados."))
+                return
+            self.refresh_setups_filters()
+            self.refresh_setups_table()
+            msg = "\n".join(f"{os.path.basename(item['from'])} -> {os.path.basename(item['to'])}" for item in changed[:10])
+            if len(changed) > 10:
+                msg += f"\n... (+{len(changed) - 10} arquivos)"
+            QMessageBox.information(self, ui("Padronizacao concluida"), msg)
+        except Exception as exc:
+            QMessageBox.critical(self, ui("Erro"), str(exc))
+
+    def _current_setup_telemetry(self, car_id: str, track_id: str):
+        laps = []
+        for lap in self.motec.get_best_laps():
+            if lap.get("car") and lap.get("track_id") and str(lap.get("car")).lower() == str(car_id).lower() and str(lap.get("track_id")).lower() == str(track_id).lower():
+                laps.append(lap)
+        return laps
+
     def apply_preset(self, preset_type):
         if not self._current_setup_path or not self._current_setup_dict:
             QMessageBox.warning(self, ui("Aviso"), ui("Selecione um setup base primeiro na tabela."))
             return
 
+        setup_meta = self.table_setups.item(self.table_setups.currentRow(), 0).data(Qt.ItemDataRole.UserRole)
+        car_id = setup_meta["car"]
+        track_id = setup_meta["track"]
         base_name = os.path.basename(self._current_setup_path).replace(".json", "")
         if preset_type == "qualy":
             new_data = self.setup_mgr.generate_qualy_preset(self._current_setup_dict)
-            suffix = "_Q"
+            suffix = "qualy"
             msg = "criado com baixo combustivel e pastilhas 1."
         elif preset_type == "race":
             new_data = self.setup_mgr.generate_race_preset(self._current_setup_dict)
-            suffix = "_R"
+            suffix = "race"
             msg = "criado com combustivel para stint e pastilhas 2."
         elif preset_type == "wet":
             new_data = self.setup_mgr.generate_wet_preset(self._current_setup_dict)
-            suffix = "_W"
+            suffix = "wet"
             msg = "criado com pneu de chuva, pastilhas 3 e aero alterada."
+        else:
+            suffix = "setup"
 
-        new_name, ok = QInputDialog.getText(self, ui("Salvar Preset"), ui("Nome do novo arquivo:"), QLineEdit.EchoMode.Normal, f"{base_name}{suffix}")
+        target_name = self.setup_mgr.build_standardized_setup_name(car_id, track_id, suffix, "preset")
+        new_name, ok = QInputDialog.getText(self, ui("Salvar Preset"), ui("Nome do novo arquivo:"), QLineEdit.EchoMode.Normal, target_name)
         if ok and new_name.strip():
             target_dir = os.path.dirname(self._current_setup_path)
-            new_path = self.setup_mgr.get_unique_filename(target_dir, new_name.strip())
+            file_name = self.setup_mgr.normalize_setup_token(new_name.strip())
+            new_path = self.setup_mgr.get_unique_filename(target_dir, file_name)
             try:
                 self.setup_mgr.save_setup(new_path, new_data)
+                if self.save_telemetry_checkbox.isChecked():
+                    self.setup_mgr.save_setup_with_telemetry(
+                        new_path, new_data, car_id, track_id,
+                        telemetry_laps=self._current_setup_telemetry(car_id, track_id),
+                        notes=f"Preset {suffix} gerado no menu de setups"
+                    )
                 self.refresh_setups_table()
                 QMessageBox.information(self, ui("Preset Gerado"), ui("Setup {message}", message=msg))
             except Exception as e:
@@ -443,7 +631,7 @@ class SetupsTabMixin:
 
         base_name = os.path.basename(self._current_setup_path).replace(".json", "")
         suffix = f"_{track_id}_{aggressiveness}_{'W' if condition == 'wet' else 'S'}"
-        suggested_name = f"{base_name}{suffix}"
+        suggested_name = self.setup_mgr.build_standardized_setup_name(car_id, track_id, "smart", f"aggr_{aggressiveness}_{'wet' if condition == 'wet' else 'dry'}")
 
         new_name, ok = QInputDialog.getText(
             self, ui("Salvar Setup Inteligente"), ui("Nome do novo arquivo:"),
@@ -454,10 +642,17 @@ class SetupsTabMixin:
 
         target_dir = os.path.join(self.setup_mgr.setups_folder, car_id, track_id)
         os.makedirs(target_dir, exist_ok=True)
-        new_path = self.setup_mgr.get_unique_filename(target_dir, new_name.strip())
+        file_name = self.setup_mgr.normalize_setup_token(new_name.strip())
+        new_path = self.setup_mgr.get_unique_filename(target_dir, file_name)
 
         try:
             self.setup_mgr.save_setup(new_path, new_data)
+            if self.creator_save_telemetry_checkbox.isChecked():
+                self.setup_mgr.save_setup_with_telemetry(
+                    new_path, new_data, car_id, track_id,
+                    telemetry_laps=self._current_setup_telemetry(car_id, track_id),
+                    notes=f"Setup inteligente {track_id} / {condition} / {aggressiveness}"
+                )
             self.refresh_setups_filters()
             self.refresh_setups_table()
 

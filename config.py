@@ -34,6 +34,7 @@ if BASE_DIR not in sys.path:
 AVAILABLE_MODULES = ["server", "telemetry", "setups", "leaderboard"]
 DEFAULT_ENABLED_MODULES = ",".join(AVAILABLE_MODULES)
 DEFAULT_LANGUAGE = "en"
+DEFAULT_THEME = "light"
 
 UI_SETTINGS_FILE = os.path.join(USER_DATA_DIR, "ui_settings.json")
 ENV_FILE = os.path.join(USER_DATA_DIR, ".env")
@@ -69,6 +70,7 @@ def load_or_create_env():
         "DISCORD_WEBHOOK_URL": "",
         "ENABLED_MODULES": DEFAULT_ENABLED_MODULES,
         "APP_LANGUAGE": DEFAULT_LANGUAGE,
+        "APP_THEME": DEFAULT_THEME,
     }
 
     onedrive_docs = os.path.join(user_home, "OneDrive", "Documentos", "Assetto Corsa Competizione")
@@ -121,7 +123,7 @@ def reload_env():
     tempo real (sem precisar reiniciar o app). Retorna o dict novo."""
     global ENV_VARS, SERVER_PATH, DEFAULT_MOTEC_PATH, DEFAULT_SETUPS_PATH
     global SUPABASE_URL, SUPABASE_KEY, DISCORD_WEBHOOK_URL
-    global ENABLED_MODULES, APP_LANGUAGE
+    global ENABLED_MODULES, APP_LANGUAGE, APP_THEME
     ENV_VARS = load_or_create_env()
     SERVER_PATH = ENV_VARS["ACC_SERVER_PATH"]
     DEFAULT_MOTEC_PATH = ENV_VARS["ACC_MOTEC_PATH"]
@@ -131,6 +133,7 @@ def reload_env():
     DISCORD_WEBHOOK_URL = ENV_VARS.get("DISCORD_WEBHOOK_URL", "")
     ENABLED_MODULES = _parse_enabled_modules(ENV_VARS.get("ENABLED_MODULES", ""))
     APP_LANGUAGE = ENV_VARS.get("APP_LANGUAGE", DEFAULT_LANGUAGE)
+    APP_THEME = ENV_VARS.get("APP_THEME", DEFAULT_THEME)
     return ENV_VARS
 
 
@@ -143,6 +146,7 @@ SUPABASE_KEY = ENV_VARS.get("SUPABASE_KEY", "")
 DISCORD_WEBHOOK_URL = ENV_VARS.get("DISCORD_WEBHOOK_URL", "")
 ENABLED_MODULES = _parse_enabled_modules(ENV_VARS.get("ENABLED_MODULES", ""))
 APP_LANGUAGE = ENV_VARS.get("APP_LANGUAGE", DEFAULT_LANGUAGE)
+APP_THEME = ENV_VARS.get("APP_THEME", DEFAULT_THEME)
 
 try:
     import PyQt6.QtWidgets  # noqa: F401 - so para falhar cedo com mensagem amigavel
@@ -156,7 +160,7 @@ try:
     from core.motec_parser import MotecParser
     from core.setup_manager import SetupManager
     from core.setup_creator import SetupCreator
-    from core.leaderboard_client import LeaderboardClient
+    from core.leaderboard_client import LeaderboardClient, SetupUsageClient
     from core.discord_notifier import DiscordNotifier
     from core import data_loader
     from core import track_profile_calibrator
