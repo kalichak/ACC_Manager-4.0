@@ -18,7 +18,6 @@ if errorlevel 1 (
     exit /b 1
 )
 
-rem 👇 ASPAS ADICIONADAS AQUI 👇
 "!PYTHON_CMD!" --version >nul 2>nul
 if errorlevel 1 (
     echo ERRO: Python nao encontrado. O caminho testado foi: "!PYTHON_CMD!"
@@ -62,8 +61,7 @@ call :GetRemoteBranch
 call :GetRemoteVersion
 
 if /I "!REMOTE_VERSION!"=="unavailable" (
-    echo AVISO: Nao foi possivel consultar a versao remota do GitHub.
-    echo Tente novamente mais tarde.
+    echo AVISO: Nao foi possivel consultar a versao remota do GitHub. API com limite de taxa ou sem internet.
     pause
     goto :Menu
 )
@@ -116,10 +114,9 @@ if not exist "core\version_manager.py" (
 )
 
 echo [1/5] Analisando alteracoes e gerando manifesto (Python)...
-rem 👇 ASPAS ADICIONADAS AQUI TAMBÉM 👇
 "!PYTHON_CMD!" core\version_manager.py
 if errorlevel 1 (
-    echo ERRO: Falha ao executar o script version_manager.py. Leia o erro acima.
+    echo ERRO: O Python falhou. Leia a mensagem de erro acima.
     pause
     goto :Menu
 )
@@ -134,10 +131,24 @@ if "!NEW_VERSION!"=="unknown" (
     pause
     goto :Menu
 )
-echo Nova versao calculada: !NEW_VERSION!
+echo Nova versao calculada pelo Python: !NEW_VERSION!
 
 echo.
-echo [3/5] Promovendo nova versao no version.json...
+echo [3/5] Verificando se a versao realmente subiu...
+git tag -l | findstr /x "v!NEW_VERSION!" >nul
+if not errorlevel 1 (
+    echo ============================================================
+    echo ALERTA: A Tag v!NEW_VERSION! ja existe no GitHub/Git!
+    echo O Python manteve a mesma versao porque nao encontrou
+    echo novos arquivos modificados no seu projeto para subir.
+    echo.
+    echo Faca alguma alteracao no codigo para a versao poder subir.
+    echo ============================================================
+    pause
+    goto :Menu
+)
+
+echo Promovendo nova versao no version.json...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$p='%~dp0version.json'; $j=Get-Content $p -Raw|ConvertFrom-Json; $j.current_version=$j.next_version; $j|ConvertTo-Json -Depth 10|Set-Content $p"
 
 echo.
@@ -199,6 +210,10 @@ if /I "!LOCAL_VERSION!"=="!REMOTE_VERSION!" (
     echo Estado: Sincronizado com o GitHub.
 ) else (
     echo Estado: Desatualizado ^(Atualizacao/Release disponivel^).
+    if "!REMOTE_VERSION!"=="unavailable" (
+        echo.
+        echo ^(A API do GitHub pode ter bloqueado a consulta por excesso de tentativas.^)
+    )
 )
 echo.
 pause
