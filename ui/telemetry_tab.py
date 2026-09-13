@@ -25,28 +25,36 @@ class TelemetryTabMixin:
     def create_telemetry_tab(self):
         tab = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
 
         top_bar = QHBoxLayout()
+        top_bar.setSpacing(8)
         btn_refresh = QPushButton(ui("Recarregar Tempos MoTeC"))
+        btn_refresh.setMinimumHeight(38)
         btn_refresh.clicked.connect(self.refresh_motec_table)
         top_bar.addWidget(btn_refresh)
 
         btn_del_motec = QPushButton(ui("Deletar Sessao Selecionada"))
         btn_del_motec.setObjectName("btn_delete")
+        btn_del_motec.setMinimumHeight(38)
         btn_del_motec.clicked.connect(self.handle_delete_motec)
         top_bar.addWidget(btn_del_motec)
 
         btn_advanced = QPushButton(ui("Telemetria Avancada (.ld)"))
         btn_advanced.setStyleSheet("background-color: #007aff; color: #fff;")
+        btn_advanced.setMinimumHeight(38)
         btn_advanced.clicked.connect(self.show_advanced_telemetry)
         top_bar.addWidget(btn_advanced)
 
         self.motec_car_filter = QComboBox()
+        self.motec_car_filter.setMinimumWidth(160)
         self.motec_car_filter.addItem(ui("Todos os carros"))
         self.motec_car_filter.currentIndexChanged.connect(self.refresh_motec_table)
         top_bar.addWidget(QLabel(ui("Carro:")))
         top_bar.addWidget(self.motec_car_filter)
         self.motec_track_filter = QComboBox()
+        self.motec_track_filter.setMinimumWidth(160)
         self.motec_track_filter.addItem(ui("Todas as pistas"))
         self.motec_track_filter.currentIndexChanged.connect(self.refresh_motec_table)
         top_bar.addWidget(QLabel(ui("Pista:")))
@@ -55,6 +63,7 @@ class TelemetryTabMixin:
         layout.addLayout(top_bar)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setMinimumHeight(420)
 
         self.table_motec = QTableWidget(0, 6)
         self.table_motec.setHorizontalHeaderLabels([ui("Pista"), ui("Piloto"), ui("Carro"), ui("Melhor Volta"), ui("Score"), ui("Data")])
@@ -66,14 +75,17 @@ class TelemetryTabMixin:
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(10, 0, 0, 0)
+        right_layout.setSpacing(12)
 
         self.motec_img_label = ResizableImageLabel()
-        self.motec_img_label.setStyleSheet("background-color: #09090a; border: 1px dashed #323238; border-radius: 6px;")
+        self.motec_img_label.setMinimumSize(260, 180)
+        self.motec_img_label.setStyleSheet("border: 1px dashed #cbd2d9; border-radius: 6px;")
         right_layout.addWidget(self.motec_img_label)
 
         self.motec_details = QTextEdit()
         self.motec_details.setReadOnly(True)
-        self.motec_details.setStyleSheet("background-color: #09090a; border: 1px solid #323238; border-radius: 6px; padding: 10px; font-size: 13px;")
+        self.motec_details.setMinimumHeight(180)
+        self.motec_details.setStyleSheet("border: 1px solid #d5dce3; border-radius: 6px; padding: 10px; font-size: 13px;")
         self.motec_details.setHtml(f"<p>{ui('Selecione uma volta para visualizar os detalhes da sessao.')}</p>")
         right_layout.addWidget(self.motec_details)
 
@@ -185,28 +197,57 @@ class TelemetryTabMixin:
             QMessageBox.information(self, ui("Sem dados"), ui("Nao foi possivel extrair voltas dessa sessao."))
             return
 
-        # Ordena pelas voltas mais rapidas primeiro pra facilitar comparacao
-        laps_sorted = sorted(laps, key=lambda l: l["lap_time_s"])
+        valid_times = [l["lap_time_s"] for l in laps if l.get("lap_time_s", 0) > 0]
+        reference_time = min(valid_times) if valid_times else 0
+
+        def quality_for(lap):
+            lap_time = lap.get("lap_time_s", 0)
+            delta_pct = ((lap_time - reference_time) / reference_time) * 100 if reference_time else 0
+            if delta_pct <= 2:
+                return delta_pct, ui("Excelente"), "#173d2a", "#9be7b4"
+            if delta_pct <= 5:
+                return delta_pct, ui("Na media"), "#4a3c12", "#f1d98a"
+            return delta_pct, ui("A melhorar"), "#4a1f1f", "#ffaaa3"
+
+        def lap_row(lap, include_metrics=True):
+            delta_pct, quality, row_color, text_color = quality_for(lap)
+            metrics = ""
+            if include_metrics:
+                metrics = (
+                    f"<td>{lap.get('max_speed_kmh', '-')} km/h</td>"
+                    f"<td>{lap.get('full_throttle_pct_of_lap', '-')}%</td>"
+                    f"<td>{lap.get('hard_brake_events', '-')}</td>"
+                    f"<td>{lap.get('lat_g_p99', '-')}g</td>"
+                    f"<td>{lap.get('brake_g_p99', '-')}g</td>"
+                    f"<td>{lap.get('avg_tyre_temp_c', '-')}C</td>"
+                    f"<td>{lap.get('avg_brake_temp_c', '-')}C</td>"
+                )
+            return (
+                f"<tr style='background-color:{row_color}; color:{text_color};'>"
+                f"<td>{lap['lap']}</td><td>{lap['lap_time_s']:.3f}s</td>"
+                f"<td>{delta_pct:+.1f}%</td><td><b>{quality}</b></td>"
+                f"{metrics}</tr>"
+            )
+
+        laps_by_performance = sorted(laps, key=lambda item: item["lap_time_s"])
+        laps_by_number = sorted(laps, key=lambda item: item["lap"])
 
         html = f"<h3>{ui('Telemetria Avancada: {track}', track=lap['track'])}</h3>"
         html += f"<p style='color:#a8a8b3;'>{ui('Extraido diretamente do arquivo binario .ld (nao e estimativa) - {laps} volta(s) detectada(s), {channels} canais disponiveis.', laps=len(laps), channels=len(analysis['channels_available']))}</p><hr>"
+        html += f"<p style='color:#a8a8b3;'>{ui('Referencia da pista nesta sessao: {time}. O delta compara cada volta com o melhor tempo real encontrado neste arquivo.', time=f'{reference_time:.3f}s')}</p>"
+        html += f"<h4>{ui('Ranking de desempenho')}</h4>"
         html += "<table cellspacing='6' style='width:100%; font-size:12px;'>"
-        html += (f"<tr style='color:#a8a8b3;'><th align='left'>{ui('Volta')}</th><th>{ui('Tempo')}</th><th>{ui('Vel.Max')}</th>"
+        html += (f"<tr style='color:#a8a8b3;'><th align='left'>{ui('Volta')}</th><th>{ui('Tempo')}</th><th>{ui('Delta')}</th><th>{ui('Avaliacao')}</th><th>{ui('Vel.Max')}</th>"
              f"<th>{ui('%Full Throttle')}</th><th>{ui('Freadas Fortes')}</th><th>{ui('Lat. G (p99)')}</th><th>{ui('Freio G (p99)')}</th>"
              f"<th>{ui('Temp.Pneu')}</th><th>{ui('Temp.Freio')}</th></tr>")
-        for l in laps_sorted[:15]:
-            html += "<tr>"
-            html += f"<td>{l['lap']}</td>"
-            html += f"<td>{l['lap_time_s']:.3f}s</td>"
-            html += f"<td>{l.get('max_speed_kmh', '-')} km/h</td>"
-            html += f"<td>{l.get('full_throttle_pct_of_lap', '-')}%</td>"
-            html += f"<td>{l.get('hard_brake_events', '-')}</td>"
-            html += f"<td>{l.get('lat_g_p99', '-')}g</td>"
-            html += f"<td>{l.get('brake_g_p99', '-')}g</td>"
-            html += f"<td>{l.get('avg_tyre_temp_c', '-')}C</td>"
-            html += f"<td>{l.get('avg_brake_temp_c', '-')}C</td>"
-            html += "</tr>"
+        html += "".join(lap_row(item) for item in laps_by_performance[:15])
+        html += "</table>"
+        html += f"<h4>{ui('Ordem da sessao por numero da volta')}</h4>"
+        html += "<table cellspacing='6' style='width:100%; font-size:12px;'>"
+        html += f"<tr style='color:#a8a8b3;'><th align='left'>{ui('Volta')}</th><th>{ui('Tempo')}</th><th>{ui('Delta')}</th><th>{ui('Avaliacao')}</th></tr>"
+        html += "".join(lap_row(item, include_metrics=False) for item in laps_by_number)
         html += "</table><hr>"
+        html += f"<p style='color:#a8a8b3; font-size:12px;'>{ui('Verde: ate 2% do melhor tempo. Amarelo: ate 5%. Vermelho: acima de 5% ou com perda relevante de ritmo.')}</p>"
         html += (f"<p style='color:#a8a8b3; font-size:12px;'>{ui('Freadas fortes = numero de vezes que o freio passou de {threshold}% na volta. Lat./Freio G no percentil 99 (evita que um unico pico de zebra/impacto distorca o numero). Use isso pra comparar seu estilo de pilotagem entre voltas ou pra calibrar a base de pistas com dados reais (botao na aba de Setups).', threshold=f'{ld_telemetry_parser.HARD_BRAKE_THRESHOLD_PCT:.0f}')}</p>")
 
         self.motec_details.setHtml(html)

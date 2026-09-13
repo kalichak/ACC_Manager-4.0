@@ -1,0 +1,19 @@
+{
+    "app_name":  "ACC Manager",
+    "branch":  "fix/telemetry-fstring-syntax",
+    "channel":  "development",
+    "current_version":  "4.0.4-dev",
+    "next_version":  "4.0.4-dev",
+    "commit":  "da87b02",
+    "changed_files":  [
+                          "pdate_from_github.bat"
+                      ],
+    "new_files":  [
+
+                  ],
+    "relevant_changes":  [
+
+                         ],
+    "needs_update":  false,
+    "updated_at":  "2026-09-13T16:36:09.115905+00:00"
+}

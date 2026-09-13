@@ -30,8 +30,11 @@ class ServerTabMixin:
     def create_server_tab(self):
         tab = QWidget()
         main_layout = QHBoxLayout()
+        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout.setSpacing(12)
 
         left_layout = QVBoxLayout()
+        left_layout.setSpacing(12)
         box_general = QGroupBox(t("box_general_title"))
         gen_layout = QVBoxLayout()
         gen_layout.addWidget(QLabel(t("label_server_name")))
@@ -113,35 +116,49 @@ class ServerTabMixin:
         box_rules.setLayout(rules_layout)
         left_layout.addWidget(box_rules)
 
-        buttons_layout = QHBoxLayout()
+        actions_box = QGroupBox("Ações do servidor")
+        actions_layout = QHBoxLayout()
+        actions_layout.setSpacing(8)
+
         self.btn_save = QPushButton(t("btn_save_settings"))
+        self.btn_save.setMinimumHeight(42)
         self.btn_save.clicked.connect(self.save_ui_settings)
-        buttons_layout.addWidget(self.btn_save)
+        actions_layout.addWidget(self.btn_save)
+
         self.btn_start = QPushButton(t("btn_start_server"))
         self.btn_start.setObjectName("btn_start")
+        self.btn_start.setMinimumHeight(42)
         self.btn_start.clicked.connect(self.handle_start_server)
-        buttons_layout.addWidget(self.btn_start)
-        left_layout.addLayout(buttons_layout)
+        actions_layout.addWidget(self.btn_start)
+
         self.btn_reset = QPushButton(t("btn_stop_server"))
         self.btn_reset.setObjectName("btn_reset")
+        self.btn_reset.setMinimumHeight(42)
         self.btn_reset.clicked.connect(self.handle_reset_server)
-        left_layout.addWidget(self.btn_reset)
-        left_layout.addStretch()
+        actions_layout.addWidget(self.btn_reset)
+
+        actions_box.setLayout(actions_layout)
+        left_layout.addWidget(actions_box)
+        left_layout.addStretch(1)
         main_layout.addLayout(left_layout, stretch=1)
 
         right_layout = QVBoxLayout()
+        right_layout.setSpacing(12)
         box_preview = QGroupBox(t("box_circuit_title"))
+        box_preview.setMinimumHeight(500)
         preview_layout = QVBoxLayout()
         self.track_img_label = ResizableImageLabel()
-        self.track_img_label.setStyleSheet("background-color: #09090a; border: 1px dashed #323238; border-radius: 6px;")
+        self.track_img_label.setMinimumSize(260, 180)
+        self.track_img_label.setStyleSheet("border: 1px dashed #cbd2d9; border-radius: 6px;")
         self.track_title_label = QLabel()
         self.track_title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.track_title_label.setStyleSheet("color: #ff3b30; margin-top: 8px; font-size: 13pt; font-weight: bold;")
         preview_layout.addWidget(self.track_img_label)
         preview_layout.addWidget(self.track_title_label)
-        preview_layout.addStretch()
+        preview_layout.addStretch(1)
         box_preview.setLayout(preview_layout)
         right_layout.addWidget(box_preview)
+        right_layout.addStretch(1)
         main_layout.addLayout(right_layout, stretch=1)
 
         tab.setLayout(main_layout)
@@ -220,7 +237,7 @@ class ServerTabMixin:
 class ResizableImageLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(200, 150)
+        self.setMinimumSize(260, 180)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._pixmap = None
 

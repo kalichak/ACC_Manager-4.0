@@ -47,19 +47,20 @@ por isso funciona sem reiniciar o programa.
 
 import json
 import os
+from contextlib import contextmanager
 
 from PyQt6.QtWidgets import (
-    QMainWindow, QTabWidget, QMessageBox, QPushButton, QWidget, QHBoxLayout,
-    QComboBox, QLabel,
+    QApplication, QMainWindow, QTabWidget, QMessageBox, QPushButton, QWidget,
+    QHBoxLayout, QComboBox, QLabel, QProgressBar,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QEvent, Qt, QTimer
 
 import config
 from config import (
     UI_SETTINGS_FILE, SERVER_PATH, DEFAULT_MOTEC_PATH, DEFAULT_SETUPS_PATH,
     SUPABASE_URL, SUPABASE_KEY, DISCORD_WEBHOOK_URL,
     ServerController, MotecParser, SetupManager, SetupCreator,
-    LeaderboardClient, DiscordNotifier,
+    LeaderboardClient, SetupUsageClient, DiscordNotifier,
 )
 from ui.server_tab import ServerTabMixin
 from ui.telemetry_tab import TelemetryTabMixin
@@ -67,6 +68,7 @@ from ui.setups_tab import SetupsTabMixin
 from ui.leaderboard_tab import LeaderboardTabMixin
 from ui.settings_dialog import SettingsDialog
 from ui.i18n import t, set_language, get_language, LANGUAGES
+from ui.styles import DARK_STYLE, LIGHT_STYLE
 
 
 class ACCManagerApp(QMainWindow, ServerTabMixin, TelemetryTabMixin, SetupsTabMixin, LeaderboardTabMixin):
@@ -80,18 +82,61 @@ class ACCManagerApp(QMainWindow, ServerTabMixin, TelemetryTabMixin, SetupsTabMix
         self.setup_mgr = SetupManager(DEFAULT_SETUPS_PATH)
         self.setup_creator = SetupCreator()
         self.leaderboard = LeaderboardClient(SUPABASE_URL, SUPABASE_KEY)
+        self.setup_usage = SetupUsageClient(SUPABASE_URL, SUPABASE_KEY)
         self.discord = DiscordNotifier(DISCORD_WEBHOOK_URL)
 
         self._current_setup_path = None
         self._current_setup_dict = None
 
-        self.resize(1200, 850)
+        self.setMinimumSize(1200, 820)
+        self.resize(1400, 900)
 
         self.init_ui()
+        self._setup_progress_feedback()
+        QApplication.instance().installEventFilter(self)
         self.load_ui_settings()
         self.validate_paths()
 
         self.refresh_enabled_modules_data()
+
+    def _setup_progress_feedback(self):
+        self._progress_label = QLabel()
+        self._progress_bar = QProgressBar()
+        self._progress_bar.setRange(0, 0)
+        self._progress_bar.setFixedWidth(180)
+        self._progress_bar.setTextVisible(False)
+        self._progress_bar.hide()
+        self.statusBar().addPermanentWidget(self._progress_label)
+        self.statusBar().addPermanentWidget(self._progress_bar)
+
+    def start_operation(self, message="Processando..."):
+        self._progress_label.setText(message)
+        self._progress_bar.show()
+        self.setCursor(Qt.CursorShape.WaitCursor)
+        QApplication.processEvents()
+
+    def finish_operation(self):
+        self._progress_bar.hide()
+        self._progress_label.clear()
+        self.unsetCursor()
+        QApplication.processEvents()
+
+    def eventFilter(self, watched, event):
+        if isinstance(watched, QPushButton):
+            if event.type() == QEvent.Type.MouseButtonPress and watched.isEnabled():
+                label = watched.text().replace("&", "").strip()
+                self.start_operation(label or "Processando...")
+            elif event.type() == QEvent.Type.MouseButtonRelease:
+                QTimer.singleShot(0, self.finish_operation)
+        return super().eventFilter(watched, event)
+
+    @contextmanager
+    def operation_progress(self, message="Processando..."):
+        self.start_operation(message)
+        try:
+            yield
+        finally:
+            self.finish_operation()
 
     def refresh_enabled_modules_data(self):
         """Atualiza as tabelas/filtros dos modulos que dependem de dados
@@ -123,6 +168,8 @@ class ACCManagerApp(QMainWindow, ServerTabMixin, TelemetryTabMixin, SetupsTabMix
         self.setWindowTitle(t("app_title"))
 
         tabs = QTabWidget()
+        tabs.setMinimumSize(1100, 700)
+        tabs.setElideMode(Qt.TextElideMode.ElideRight)
         self.enabled_modules = set(config.ENABLED_MODULES)
 
         if "server" in self.enabled_modules:
@@ -192,6 +239,7 @@ class ACCManagerApp(QMainWindow, ServerTabMixin, TelemetryTabMixin, SetupsTabMix
         tudo sem fechar e abrir o programa de novo."""
         config.reload_env()
         set_language(config.APP_LANGUAGE)
+        QApplication.instance().setStyleSheet(LIGHT_STYLE if config.APP_THEME == "light" else DARK_STYLE)
         self.init_ui()
         self.load_ui_settings()
         self.reload_services()

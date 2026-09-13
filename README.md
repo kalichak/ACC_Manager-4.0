@@ -172,6 +172,23 @@ adicionaram seleção de idioma em tempo real e permitiram ocultar os módulos
 que não serão usados. A configuração é preservada no `.env`, enquanto os
 campos da interface continuam salvos em `ui_settings.json` local.
 
+## Versionamento
+
+O projeto usa versionamento semântico `MAJOR.MINOR.PATCH` com sufixos de
+canal para alterações ainda não estáveis. O arquivo `version.json` registra
+o manifesto gerado pela tela de configurações:
+
+- `main` e `master`: versão estável; alterações incrementam `PATCH`.
+- `feature/*`: próxima versão de recurso, no formato `MINOR.0-beta`.
+- `release/*`: candidata a lançamento, no formato `MINOR.0-rc`.
+- `hotfix/*`: correção urgente, no formato `PATCH-hotfix`.
+- outras branches: desenvolvimento, no formato `PATCH-dev`.
+
+Uma alteração só é considerada atualização do aplicativo quando afeta
+`core/`, `ui/`, `main.py` ou `config.py`. A aba **Configurações >
+Versionamento e atualização** mostra a branch, o commit, os arquivos
+detectados e a próxima versão calculada.
+
 ## Licença do ACC Manager
 
 O código original deste projeto é distribuído gratuitamente sob a

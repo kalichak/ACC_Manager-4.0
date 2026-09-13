@@ -25,13 +25,29 @@ COMO CRIAR (uma vez, leva ~5 minutos):
             recorded_at timestamptz default now()
         );
 
-        alter table leaderboard enable row level security;
+        create table setup_usage (
+            id bigint generated always as identity primary key,
+            driver_name text not null,
+            car_id text not null,
+            track_id text not null,
+            setup_name text not null,
+            setup_file_path text,
+            preset_type text,
+            notes text,
+            setup_json jsonb,
+            used_at timestamptz default now()
+        );
 
-        -- Qualquer pessoa com a chave anon pode LER e INSERIR (nunca apagar/editar).
-        -- Isso mantem um historico imutavel: cada sessao vira uma linha nova,
-        -- e o "melhor tempo" e sempre calculado pela ferramenta (MIN por piloto+carro+pista).
+        -- se a tabela ja existe, rode:
+        alter table setup_usage add column if not exists setup_json jsonb;
+
+        alter table leaderboard enable row level security;
+        alter table setup_usage enable row level security;
+
         create policy "allow_insert" on leaderboard for insert to anon with check (true);
         create policy "allow_select" on leaderboard for select to anon using (true);
+        create policy "allow_insert_setup_usage" on setup_usage for insert to anon with check (true);
+        create policy "allow_select_setup_usage" on setup_usage for select to anon using (true);
 
   3. Em Project Settings > API, copie a "Project URL" e a chave "anon public".
   4. Cole essas duas informacoes no arquivo .env do ACC Manager:
@@ -124,3 +140,92 @@ class LeaderboardClient:
         result = list(best.values())
         result.sort(key=lambda r: r["lap_time_seconds"])
         return result
+
+
+class SetupUsageClient:
+    """Registra quais setups foram usados em cada sessão compartilhada."""
+
+    def __init__(self, supabase_url: str = None, supabase_key: str = None):
+        self.base_url = supabase_url.rstrip("/") if supabase_url else None
+        self.api_key = supabase_key
+        self.enabled = bool(self.base_url and self.api_key)
+
+    def _headers(self, extra=None):
+        headers = {
+            "apikey": self.api_key,
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        if extra:
+            headers.update(extra)
+        return headers
+
+    def record_usage(self, driver_name: str, car_id: str, track_id: str,
+                     setup_name: str, setup_file_path: str = None,
+                     preset_type: str = None, notes: str = None,
+                     setup_json: dict = None, created_by: str = None,
+                     created_by_name: str = None):
+        if not self.enabled:
+            raise RuntimeError(
+                "Registro de uso de setups nao configurado. Defina SUPABASE_URL e SUPABASE_KEY no arquivo .env."
+            )
+
+        payload = {
+            "driver_name": driver_name,
+            "car_id": car_id,
+            "track_id": track_id,
+            "setup_name": setup_name,
+            "setup_file_path": setup_file_path,
+            "preset_type": preset_type,
+            "notes": notes,
+        }
+        if setup_json is not None:
+            payload["setup_json"] = setup_json
+        if created_by is not None:
+            payload["created_by"] = created_by
+        if created_by_name is not None:
+            payload["created_by_name"] = created_by_name
+        resp = requests.post(
+            f"{self.base_url}/rest/v1/setup_usage",
+            json=payload,
+            headers=self._headers({"Prefer": "return=minimal"}),
+            timeout=10,
+        )
+        resp.raise_for_status()
+        return True
+
+    def fetch_recent(self, limit: int = 100):
+        if not self.enabled:
+            return []
+
+        resp = requests.get(
+            f"{self.base_url}/rest/v1/setup_usage",
+            headers=self._headers(),
+            params={"select": "*", "order": "used_at.desc", "limit": str(limit)},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def download_shared_setup(self, driver_name: str, car_id: str, track_id: str):
+        if not self.enabled:
+            return None
+
+        resp = requests.get(
+            f"{self.base_url}/rest/v1/setup_usage",
+            headers=self._headers(),
+            params={
+                "select": "*",
+                "driver_name": f"eq.{driver_name}",
+                "car_id": f"eq.{car_id}",
+                "track_id": f"eq.{track_id}",
+                "order": "used_at.desc",
+                "limit": "1",
+            },
+            timeout=10,
+        )
+        resp.raise_for_status()
+        rows = resp.json()
+        if not rows:
+            return None
+        return rows[0]
