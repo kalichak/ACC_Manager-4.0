@@ -61,7 +61,7 @@ class SetupsTabMixin:
 
         tools_box = QGroupBox(ui("Ferramentas"))
         tools_layout = QHBoxLayout()
-        btn_add_tlm = QPushButton(ui("Adicionar TLM em todos os setups"))
+        btn_add_tlm = QPushButton(ui("Adicionar TLM no SETUP"))
         btn_add_tlm.setStyleSheet("background-color: #7a5af8; color: #fff;")
         btn_add_tlm.clicked.connect(self.add_tlm_to_all_setups)
         tools_layout.addWidget(btn_add_tlm)

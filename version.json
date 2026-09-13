@@ -1,41 +1,22 @@
 {
-  "app_name": "ACC Manager",
-  "branch": "fix/telemetry-fstring-syntax",
-  "channel": "development",
-  "current_version": "4.0.1-dev",
-  "next_version": "4.0.2-dev",
-  "commit": "1b36383",
-  "changed_files": [
-    "onfig.py",
-    "core/discord_notifier.py",
-    "core/setup_creator.py",
-    "core/setup_manager.py",
-    "tests/test_discord_notifier.py",
-    "ui/i18n.py",
-    "ui/settings_dialog.py",
-    "ui/setups_tab.py",
-    "version.json",
-    "\"ACC_Manager 4.0.rar\"",
-    "discord_jobs.bat",
-    "discord_jobs.py",
-    "tests/test_setup_creator_wet_pressure.py",
-    "update_from_github.bat"
-  ],
-  "new_files": [
-    "ACC_Manager 4.0.rar",
-    "discord_jobs.bat",
-    "discord_jobs.py",
-    "tests/test_setup_creator_wet_pressure.py",
-    "update_from_github.bat"
-  ],
-  "relevant_changes": [
-    "core/discord_notifier.py",
-    "core/setup_creator.py",
-    "core/setup_manager.py",
-    "ui/i18n.py",
-    "ui/settings_dialog.py",
-    "ui/setups_tab.py"
-  ],
-  "needs_update": true,
-  "updated_at": "2026-09-13T13:51:55.117022+00:00"
+    "app_name":  "ACC Manager",
+    "branch":  "fix/telemetry-fstring-syntax",
+    "channel":  "development",
+    "current_version":  "4.0.2-dev",
+    "next_version":  "4.0.2-dev",
+    "commit":  "c232d56",
+    "changed_files":  [
+                          "i/setups_tab.py",
+                          "update_from_github.bat",
+                          "version.json",
+                          "increment_version.ps1"
+                      ],
+    "new_files":  [
+                      "increment_version.ps1"
+                  ],
+    "relevant_changes":  [
+
+                         ],
+    "needs_update":  false,
+    "updated_at":  "2026-09-13T14:38:45.374872+00:00"
 }
