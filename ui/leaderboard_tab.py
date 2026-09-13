@@ -90,22 +90,7 @@ class LeaderboardTabMixin:
         )
         self.table_leaderboard.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         install_header_filters(self.table_leaderboard)
-        ranking_layout.addWidget(self.table_leaderboard)
-        ranking_box.setLayout(ranking_layout)
-        layout.addWidget(ranking_box)
-
-        setups_box = QGroupBox(ui("Setups compartilhados"))
-        setups_layout = QVBoxLayout()
-        self.table_shared_setups = QTableWidget(0, 8)
-        self.table_shared_setups.setMinimumHeight(220)
-        self.table_shared_setups.setHorizontalHeaderLabels(
-            [ui("Autor"), ui("Piloto"), ui("Carro"), ui("Pista"), ui("Setup"), ui("Preset"), ui("Data"), ui("Notas")]
-        )
-        self.table_shared_setups.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        install_header_filters(self.table_shared_setups)
-        setups_layout.addWidget(self.table_shared_setups)
-        setups_box.setLayout(setups_layout)
-        layout.addWidget(setups_box)
+        layout.addWidget(self.table_leaderboard)
 
         note = QLabel(
             "Dica: o ranking mostra o melhor tempo de cada piloto por combinacao de carro+pista. "
@@ -216,43 +201,6 @@ class LeaderboardTabMixin:
             self.table_leaderboard.setSortingEnabled(True)
 
         apply_header_filters(self.table_leaderboard)
-
-    def refresh_shared_setups_table(self):
-        if not getattr(self, "setup_usage", None) or not self.setup_usage.enabled:
-            self.table_shared_setups.setRowCount(0)
-            return
-
-        try:
-            rows = self.setup_usage.fetch_recent(limit=50)
-        except Exception as exc:
-            QMessageBox.critical(self, ui("Erro ao buscar setups compartilhados"), str(exc))
-            return
-
-        self.table_shared_setups.setSortingEnabled(False)
-        try:
-            self.table_shared_setups.setRowCount(len(rows))
-            for i, row in enumerate(rows):
-                created_by_name = str(row.get("created_by_name") or row.get("driver_name", ""))
-                driver_name = str(row.get("driver_name", ""))
-                car_id = str(row.get("car_id", ""))
-                track_id = str(row.get("track_id", ""))
-                setup_name = str(row.get("setup_name", ""))
-                preset_type = str(row.get("preset_type") or "manual")
-                used_at = str(row.get("used_at", ""))
-                notes = str(row.get("notes") or "")
-
-                self.table_shared_setups.setItem(i, 0, table_item(created_by_name))
-                self.table_shared_setups.setItem(i, 1, table_item(driver_name))
-                self.table_shared_setups.setItem(i, 2, table_item(car_id))
-                self.table_shared_setups.setItem(i, 3, table_item(TRACKS_DATABASE.get(track_id, track_id)))
-                self.table_shared_setups.setItem(i, 4, table_item(setup_name))
-                self.table_shared_setups.setItem(i, 5, table_item(preset_type))
-                self.table_shared_setups.setItem(i, 6, table_item(used_at[:16].replace("T", " ") if used_at else ""))
-                self.table_shared_setups.setItem(i, 7, table_item(notes[:120] if notes else ""))
-        finally:
-            self.table_shared_setups.setSortingEnabled(True)
-
-        apply_header_filters(self.table_shared_setups)
 
     @staticmethod
     def _parse_lap_time(value):
