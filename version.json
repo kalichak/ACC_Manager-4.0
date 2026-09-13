@@ -2,21 +2,18 @@
     "app_name":  "ACC Manager",
     "branch":  "fix/telemetry-fstring-syntax",
     "channel":  "development",
-    "current_version":  "4.0.2-dev",
-    "next_version":  "4.0.2-dev",
-    "commit":  "c232d56",
+    "current_version":  "4.0.3-dev",
+    "next_version":  "4.0.3-dev",
+    "commit":  "4db0849",
     "changed_files":  [
-                          "i/setups_tab.py",
-                          "update_from_github.bat",
-                          "version.json",
-                          "increment_version.ps1"
+                          "pdate_from_github.bat"
                       ],
     "new_files":  [
-                      "increment_version.ps1"
+
                   ],
     "relevant_changes":  [
 
                          ],
     "needs_update":  false,
-    "updated_at":  "2026-09-13T14:38:45.374872+00:00"
+    "updated_at":  "2026-09-13T16:26:10.883689+00:00"
 }
