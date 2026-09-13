@@ -3,11 +3,39 @@
   "branch": "fix/telemetry-fstring-syntax",
   "channel": "development",
   "current_version": "4.0.1-dev",
-  "next_version": "4.0.1-dev",
-  "commit": "18da0fb",
-  "changed_files": [],
-  "new_files": [],
-  "relevant_changes": [],
-  "needs_update": false,
-  "updated_at": "2026-09-12T20:03:42.799783+00:00"
+  "next_version": "4.0.2-dev",
+  "commit": "1b36383",
+  "changed_files": [
+    "onfig.py",
+    "core/discord_notifier.py",
+    "core/setup_creator.py",
+    "core/setup_manager.py",
+    "tests/test_discord_notifier.py",
+    "ui/i18n.py",
+    "ui/settings_dialog.py",
+    "ui/setups_tab.py",
+    "version.json",
+    "\"ACC_Manager 4.0.rar\"",
+    "discord_jobs.bat",
+    "discord_jobs.py",
+    "tests/test_setup_creator_wet_pressure.py",
+    "update_from_github.bat"
+  ],
+  "new_files": [
+    "ACC_Manager 4.0.rar",
+    "discord_jobs.bat",
+    "discord_jobs.py",
+    "tests/test_setup_creator_wet_pressure.py",
+    "update_from_github.bat"
+  ],
+  "relevant_changes": [
+    "core/discord_notifier.py",
+    "core/setup_creator.py",
+    "core/setup_manager.py",
+    "ui/i18n.py",
+    "ui/settings_dialog.py",
+    "ui/setups_tab.py"
+  ],
+  "needs_update": true,
+  "updated_at": "2026-09-13T13:51:55.117022+00:00"
 }

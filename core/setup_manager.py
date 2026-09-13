@@ -2,7 +2,34 @@ import os
 import json
 import shutil
 import copy
+import math
 import re
+
+TELEMETRY_SUFFIX = ".telemetry.json"
+
+
+def calculate_race_fuel(lap_time_seconds: float, fuel_per_lap: float, race_minutes: float,
+                         formation_laps: int = 1, safety_laps: float = 1.0) -> dict:
+    """Calcula quanto combustivel carregar pra corrida a partir do tempo de
+    volta, do consumo por volta e da duracao da corrida (em minutos) - em
+    vez do valor fixo usado antes nos presets. formation_laps cobre a
+    volta de formacao/largada e safety_laps e uma margem extra (em voltas
+    equivalentes) pra nao faltar combustivel por 1-2 voltas de diferenca
+    entre a simulacao e a corrida real."""
+    if lap_time_seconds is None or fuel_per_lap is None or race_minutes is None:
+        raise ValueError("Tempo de volta, consumo por volta e duracao da corrida sao obrigatorios.")
+    if lap_time_seconds <= 0 or fuel_per_lap <= 0 or race_minutes <= 0:
+        raise ValueError("Tempo de volta, consumo por volta e duracao da corrida devem ser maiores que zero.")
+
+    laps_in_race = (race_minutes * 60.0) / lap_time_seconds
+    total_laps = math.ceil(laps_in_race) + formation_laps
+    total_fuel = round((total_laps + safety_laps) * fuel_per_lap, 1)
+    return {
+        "laps_in_race": round(laps_in_race, 2),
+        "total_laps": total_laps,
+        "total_fuel": total_fuel,
+    }
+
 
 class SetupManager:
     def __init__(self, setups_folder=None):
@@ -14,6 +41,17 @@ class SetupManager:
                 os.path.join(os.path.expanduser("~"), "Documents", "Assetto Corsa Competizione", "Setups"),
             ]
             self.setups_folder = next((p for p in candidates if os.path.exists(p)), candidates[0])
+
+    @staticmethod
+    def _is_setup_file(filename: str) -> bool:
+        """Um setup de verdade e qualquer .json que NAO seja o arquivo
+        auxiliar de telemetria (*.telemetry.json) criado por
+        save_setup_with_telemetry. Sem esse filtro, os arquivos de
+        telemetria aparecem misturados na lista de setups (podendo ser
+        selecionados/editados por engano) e, se "Adicionar TLM" for usado
+        neles, o sufixo .telemetry vai se acumulando (.telemetry.telemetry...)."""
+        lower = filename.lower()
+        return lower.endswith(".json") and not lower.endswith(TELEMETRY_SUFFIX)
 
     def list_all_setups(self):
         setups = []
@@ -29,7 +67,7 @@ class SetupManager:
                 if not os.path.isdir(track_dir):
                     continue
                 for file_name in sorted(os.listdir(track_dir)):
-                    if not file_name.endswith(".json"):
+                    if not self._is_setup_file(file_name):
                         continue
                     file_path = os.path.join(track_dir, file_name)
                     setups.append({
@@ -90,12 +128,45 @@ class SetupManager:
             parts.append(self.normalize_setup_token(variant))
         return "_".join(part for part in parts if part)
 
+    def find_identical_setup(self, target_dir: str, data: dict, exclude_path: str = None):
+        """Procura, dentro de target_dir, um setup .json (nunca um arquivo
+        .telemetry.json auxiliar) com o MESMO conteudo de 'data'. Usada
+        antes de clonar/replicar/renomear/gerar setups pra nunca criar uma
+        copia identica com nome novo (_v1, _v2, _v3...) - se achar, devolve
+        o caminho do arquivo ja existente; senao devolve None."""
+        if not os.path.exists(target_dir):
+            return None
+        exclude_abs = os.path.abspath(exclude_path) if exclude_path else None
+        for filename in os.listdir(target_dir):
+            if not self._is_setup_file(filename):
+                continue
+            candidate_path = os.path.join(target_dir, filename)
+            if exclude_abs and os.path.abspath(candidate_path) == exclude_abs:
+                continue
+            existing_data = self.get_setup_details(candidate_path)
+            if existing_data == data:
+                return candidate_path
+        return None
+
+    def resolve_setup_save_path(self, target_dir: str, base_name: str, data: dict, exclude_path: str = None):
+        """Decide o caminho final pra salvar um setup evitando duplicar
+        conteudo identico com nome novo: se ja existir um setup com o
+        MESMO conteudo em target_dir, devolve (caminho_existente, False)
+        pra quem chamou avisar o usuario em vez de duplicar; senao devolve
+        (caminho_novo_unico, True), com o incremento _v1, _v2... de
+        sempre."""
+        duplicate = self.find_identical_setup(target_dir, data, exclude_path=exclude_path)
+        if duplicate:
+            return duplicate, False
+        return self.get_unique_filename(target_dir, base_name), True
+
     def standardize_setup_names(self, folder_path=None):
         target_folder = folder_path or self.setups_folder
         if not os.path.exists(target_folder):
-            return []
+            return {"renamed": [], "duplicates": []}
 
-        changed = []
+        renamed = []
+        duplicates = []
         for car_name in sorted(os.listdir(target_folder)):
             car_dir = os.path.join(target_folder, car_name)
             if not os.path.isdir(car_dir):
@@ -105,7 +176,7 @@ class SetupManager:
                 if not os.path.isdir(track_dir):
                     continue
                 for filename in sorted(os.listdir(track_dir)):
-                    if not filename.lower().endswith(".json"):
+                    if not self._is_setup_file(filename):
                         continue
                     file_path = os.path.join(track_dir, filename)
                     base_name = os.path.splitext(filename)[0]
@@ -122,29 +193,106 @@ class SetupManager:
                         preset = "setup"
 
                     normalized = self.build_standardized_setup_name(car_name, track_name, preset, variant=None)
-                    if base_name.lower() != normalized:
-                        candidate = os.path.join(track_dir, f"{normalized}.json")
-                        unique_candidate = candidate
-                        counter = 1
-                        while os.path.exists(unique_candidate) and os.path.abspath(unique_candidate) != os.path.abspath(file_path):
-                            unique_candidate = os.path.join(track_dir, f"{normalized}_v{counter}.json")
-                            counter += 1
-                        os.rename(file_path, unique_candidate)
-                        changed.append({"from": file_path, "to": unique_candidate})
-        return changed
+                    if base_name.lower() == normalized:
+                        continue
+
+                    file_data = self.get_setup_details(file_path)
+                    candidate = os.path.join(track_dir, f"{normalized}.json")
+
+                    # Antes de gerar um _v1/_v2/_v3 novo, verifica se algum
+                    # arquivo que ja ocupa um nome candidato tem conteudo
+                    # IDENTICO ao que estamos renomeando - se tiver, esse
+                    # arquivo e uma duplicata real e nao precisa (nem deve)
+                    # virar mais uma copia com nome novo.
+                    unique_candidate = candidate
+                    counter = 1
+                    is_duplicate = False
+                    while os.path.exists(unique_candidate) and os.path.abspath(unique_candidate) != os.path.abspath(file_path):
+                        existing_data = self.get_setup_details(unique_candidate)
+                        if file_data is not None and existing_data == file_data:
+                            duplicates.append({"kept": unique_candidate, "duplicate_of": file_path})
+                            is_duplicate = True
+                            break
+                        unique_candidate = os.path.join(track_dir, f"{normalized}_v{counter}.json")
+                        counter += 1
+
+                    if is_duplicate:
+                        continue
+
+                    os.rename(file_path, unique_candidate)
+                    renamed.append({"from": file_path, "to": unique_candidate})
+
+        return {"renamed": renamed, "duplicates": duplicates}
 
     def save_setup_with_telemetry(self, setup_path: str, setup_data: dict, car_id: str, track_id: str, telemetry_laps: list = None, notes: str = None):
-        if setup_path and os.path.exists(setup_path):
+        # So regrava o setup em si se setup_path realmente APONTA pra um
+        # setup (nunca pro sidecar .telemetry.json) - protege contra a UI
+        # acidentalmente sobrescrever o payload de telemetria com o dict
+        # do setup se algum caminho errado chegar aqui.
+        if setup_path and self._is_setup_file(os.path.basename(setup_path)) and os.path.exists(setup_path):
             self.save_setup(setup_path, setup_data)
 
-        telemetry_path = os.path.splitext(setup_path)[0] + ".telemetry.json"
+        # Sempre parte do nome "cru" do setup: tira a extensao .json e, se
+        # setup_path ja for (ou tiver virado, por chamadas repetidas) um
+        # arquivo .telemetry.json - inclusive encadeado tipo
+        # "...telemetry.telemetry.telemetry.json" - tira TODOS os sufixos
+        # ".telemetry" tambem. Assim o caminho final e sempre
+        # "nome_do_setup.telemetry.json", nunca importa quantas vezes essa
+        # funcao seja chamada nem qual variante do caminho for passada.
+        base_path = setup_path
+        if base_path.lower().endswith(".json"):
+            base_path = base_path[: -len(".json")]
+        while base_path.lower().endswith(".telemetry"):
+            base_path = base_path[: -len(".telemetry")]
+        telemetry_path = base_path + TELEMETRY_SUFFIX
+
+        existing_laps = []
+        existing_payload = {}
+        if os.path.exists(telemetry_path):
+            try:
+                with open(telemetry_path, "r", encoding="utf-8-sig") as f:
+                    existing_payload = json.load(f) or {}
+                existing_laps = existing_payload.get("laps", []) or []
+            except Exception:
+                existing_laps = []
+                existing_payload = {}
+
+        # Soma de voltas de verdade: mescla as voltas novas com as que ja
+        # estavam salvas, sem duplicar a mesma volta (identificada por
+        # tempo + data do arquivo de origem). Antes disso, cada clique
+        # simplesmente sobrescrevia "laps" com o que veio na chamada
+        # (as vezes uma lista vazia), funcionando so como uma flag de
+        # "tem telemetria sim/nao" em vez de acumular as voltas reais.
+        merged_laps = list(existing_laps)
+        seen_signatures = {
+            (lap.get("raw_time"), lap.get("file_name")) for lap in existing_laps if isinstance(lap, dict)
+        }
+        for lap in (telemetry_laps or []):
+            if not isinstance(lap, dict):
+                continue
+            signature = (lap.get("raw_time"), lap.get("file_name"))
+            if signature in seen_signatures:
+                continue
+            seen_signatures.add(signature)
+            merged_laps.append(lap)
+
+        best_lap = None
+        for lap in merged_laps:
+            raw_time = lap.get("raw_time") if isinstance(lap, dict) else None
+            if raw_time is None:
+                continue
+            if best_lap is None or raw_time < best_lap:
+                best_lap = raw_time
+
         payload = {
             "car_id": car_id,
             "track_id": track_id,
-            "setup_name": os.path.splitext(os.path.basename(setup_path))[0],
+            "setup_name": os.path.splitext(os.path.basename(base_path))[0],
             "saved_at": __import__("datetime").datetime.utcnow().isoformat(timespec="seconds") + "Z",
             "notes": notes,
-            "laps": telemetry_laps or [],
+            "lap_count": len(merged_laps),
+            "best_lap_seconds": best_lap,
+            "laps": merged_laps,
         }
         with open(telemetry_path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, ensure_ascii=False)
@@ -160,10 +308,11 @@ class SetupManager:
 
     def clone_setup(self, source_path: str, new_name: str):
         dir_name = os.path.dirname(source_path)
-        new_path = self.get_unique_filename(dir_name, new_name)
         data = self.get_setup_details(source_path)
-        self.save_setup(new_path, data)
-        return new_path
+        new_path, is_new = self.resolve_setup_save_path(dir_name, new_name, data, exclude_path=source_path)
+        if is_new:
+            self.save_setup(new_path, data)
+        return new_path, is_new
 
     def replicate_setup(self, source_path: str, target_car: str, target_track: str, new_name: str, adjust_19: bool = False):
         data = self.get_setup_details(source_path)
@@ -185,11 +334,12 @@ class SetupManager:
 
         target_dir = os.path.join(self.setups_folder, target_car, target_track)
         os.makedirs(target_dir, exist_ok=True)
-        
-        new_path = self.get_unique_filename(target_dir, new_name)
-        self.save_setup(new_path, data)
-        return new_path
-    
+
+        new_path, is_new = self.resolve_setup_save_path(target_dir, new_name, data)
+        if is_new:
+            self.save_setup(new_path, data)
+        return new_path, is_new
+
     def generate_qualy_preset(self, setup_data: dict):
         new_data = copy.deepcopy(setup_data)
         try:
@@ -201,10 +351,20 @@ class SetupManager:
         except KeyError: pass
         return new_data
 
-    def generate_race_preset(self, setup_data: dict):
+    def generate_race_preset(self, setup_data: dict, race_minutes: float = None,
+                              fuel_per_lap: float = None, lap_time_seconds: float = None):
+        """race_minutes / fuel_per_lap / lap_time_seconds sao opcionais: se
+        os tres forem informados, o combustivel e calculado com
+        calculate_race_fuel (duracao da corrida + consumo real por volta).
+        Se faltar algum, cai no valor fixo de 105L usado antes, entao quem
+        ja usava esse preset sem esses dados continua funcionando igual."""
         new_data = copy.deepcopy(setup_data)
         try:
-            new_data["basicSetup"]["strategy"]["fuel"] = 105
+            if race_minutes and fuel_per_lap and lap_time_seconds:
+                fuel_calc = calculate_race_fuel(lap_time_seconds, fuel_per_lap, race_minutes)
+                new_data["basicSetup"]["strategy"]["fuel"] = fuel_calc["total_fuel"]
+            else:
+                new_data["basicSetup"]["strategy"]["fuel"] = 105
             new_data["basicSetup"]["strategy"]["frontBrakePadCompound"] = 1
             new_data["basicSetup"]["strategy"]["rearBrakePadCompound"] = 1
             bbias = new_data["basicSetup"]["alignment"].get("brakeBias", 55.0)

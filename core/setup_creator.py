@@ -238,14 +238,18 @@ class SetupCreator:
             _set(data, "basicSetup", "electronics", "abs", new_abs)
             notes.append(f"ABS: {abs_v}->{new_abs}")
 
-        # --- Pressao dos pneus (ajuste fino conforme velocidade media da pista) ---
+        # --- Pressao dos pneus (ajuste fino conforme velocidade media da pista e chuva) ---
         pressures = _get(data, "basicSetup", "tyres", "tyrePressure")
         if isinstance(pressures, list) and len(pressures) == 4:
             speed_norm = data_loader.normalize(track["avg_speed"])
-            delta = round(speed_norm * 0.3, 2)
+            wet_bonus = 0.4 if condition == "wet" else 0.0
+            delta = round(speed_norm * 0.3 + wet_bonus, 2)
             new_pressures = [round(p + delta, 1) for p in pressures]
             _set(data, "basicSetup", "tyres", "tyrePressure", new_pressures)
-            notes.append(f"Pressoes: {pressures}->{new_pressures} (ajuste pela vel. media da pista)")
+            notes.append(
+                f"Pressoes: {pressures}->{new_pressures} "
+                f"({'mais alta para melhorar aquaplaning e estabilidade em chuva' if condition == 'wet' else 'ajuste pela vel. media da pista'})"
+            )
 
         # --- Condicao molhada: usa a logica ja existente de composto/freios/eletronica ---
         if condition == "wet":

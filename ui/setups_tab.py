@@ -59,6 +59,16 @@ class SetupsTabMixin:
         top_bar.addStretch()
         layout.addLayout(top_bar)
 
+        tools_box = QGroupBox(ui("Ferramentas"))
+        tools_layout = QHBoxLayout()
+        btn_add_tlm = QPushButton(ui("Adicionar TLM em todos os setups"))
+        btn_add_tlm.setStyleSheet("background-color: #7a5af8; color: #fff;")
+        btn_add_tlm.clicked.connect(self.add_tlm_to_all_setups)
+        tools_layout.addWidget(btn_add_tlm)
+        tools_layout.addStretch()
+        tools_box.setLayout(tools_layout)
+        layout.addWidget(tools_box)
+
         main_splitter = QSplitter(Qt.Orientation.Vertical)
 
         self.table_setups = QTableWidget(0, 3)
@@ -75,6 +85,7 @@ class SetupsTabMixin:
         tree_container = QVBoxLayout()
 
         factory_box = QGroupBox(ui("Fabrica de Setups (Quick Presets)"))
+        factory_box_layout = QVBoxLayout()
         factory_layout = QHBoxLayout()
 
         btn_q = QPushButton(ui("Gerar Qualy"))
@@ -95,8 +106,30 @@ class SetupsTabMixin:
         self.save_telemetry_checkbox = QCheckBox(ui("Salvar voltas de telemetria junto"))
         self.save_telemetry_checkbox.setChecked(True)
         factory_layout.addWidget(self.save_telemetry_checkbox)
+        factory_box_layout.addLayout(factory_layout)
 
-        factory_box.setLayout(factory_layout)
+        race_strategy_layout = QHBoxLayout()
+        race_strategy_layout.addWidget(QLabel(ui("Duracao da corrida (min):")))
+        self.race_duration_input = QLineEdit()
+        self.race_duration_input.setPlaceholderText(ui("ex: 45"))
+        self.race_duration_input.setMaximumWidth(80)
+        race_strategy_layout.addWidget(self.race_duration_input)
+
+        race_strategy_layout.addWidget(QLabel(ui("Combustivel por volta (L):")))
+        self.fuel_per_lap_input = QLineEdit()
+        self.fuel_per_lap_input.setPlaceholderText(ui("ex: 2.8"))
+        self.fuel_per_lap_input.setMaximumWidth(80)
+        race_strategy_layout.addWidget(self.fuel_per_lap_input)
+
+        race_strategy_hint = QLabel(ui("Usados em 'Gerar Corrida' e no Setup Inteligente para calcular o "
+                                        "combustivel total (voltas da corrida + margem). Deixe em branco para "
+                                        "usar o valor fixo padrao."))
+        race_strategy_hint.setWordWrap(True)
+        race_strategy_hint.setStyleSheet("color: #a8a8b3; font-size: 9pt;")
+        race_strategy_layout.addWidget(race_strategy_hint, stretch=1)
+        factory_box_layout.addLayout(race_strategy_layout)
+
+        factory_box.setLayout(factory_box_layout)
         tree_container.addWidget(factory_box)
 
         creator_box = QGroupBox(ui("Criador de Setups Inteligente (Pista + Carro + Agressividade)"))
@@ -214,6 +247,52 @@ class SetupsTabMixin:
     # ==========================
     # ABA 4: RANKING DOS AMIGOS
     # ==========================
+    def add_tlm_to_all_setups(self):
+        try:
+            setups = self.setup_mgr.list_all_setups()
+            if not setups:
+                QMessageBox.information(self, ui("Ferramentas"), ui("Nenhum setup foi encontrado na pasta."))
+                return
+
+            total = 0
+            processed = 0
+            for setup in setups:
+                setup_path = setup.get("file_path")
+                if not setup_path or not os.path.exists(setup_path):
+                    continue
+
+                setup_data = self.setup_mgr.get_setup_details(setup_path)
+                if not isinstance(setup_data, dict):
+                    continue
+
+                telemetry_laps = []
+                if hasattr(self, "motec") and getattr(self, "motec", None):
+                    telemetry_laps = [
+                        lap for lap in self.motec.get_best_laps()
+                        if str(lap.get("car", "")).lower() == str(setup.get("car", "")).lower()
+                        and str(lap.get("track_id", "")).lower() == str(setup.get("track", "")).lower()
+                    ]
+
+                self.setup_mgr.save_setup_with_telemetry(
+                    setup_path,
+                    setup_data,
+                    setup.get("car", ""),
+                    setup.get("track", ""),
+                    telemetry_laps=telemetry_laps,
+                    notes="TLM adicionado por ferramenta em massa",
+                )
+                processed += 1
+                total += 1
+
+            QMessageBox.information(
+                self,
+                ui("Ferramentas"),
+                ui("TLM adicionado em {processed} de {total} setups com sucesso.", processed=processed, total=total),
+            )
+            self.refresh_setups_table()
+        except Exception as exc:
+            QMessageBox.critical(self, ui("Erro"), str(exc))
+
     def refresh_setups_filters(self):
         setups = self.setup_mgr.list_all_setups()
         self.setup_car_filter.blockSignals(True)
@@ -348,9 +427,15 @@ class SetupsTabMixin:
         new_name, ok = QInputDialog.getText(self, ui("Clonar Setup"), ui("Digite o nome para o clone:"))
         if ok and new_name.strip():
             try:
-                self.setup_mgr.clone_setup(self._current_setup_path, new_name.strip())
+                new_path, is_new = self.setup_mgr.clone_setup(self._current_setup_path, new_name.strip())
                 self.refresh_setups_table()
-                QMessageBox.information(self, ui("Sucesso"), ui("Setup clonado com sucesso!"))
+                if is_new:
+                    QMessageBox.information(self, ui("Sucesso"), ui("Setup clonado com sucesso!"))
+                else:
+                    QMessageBox.information(
+                        self, ui("Setup ja existe"),
+                        ui("Ja existe um setup com este conteudo exato: {path}. Nada foi duplicado.", path=new_path),
+                    )
             except Exception as e:
                 QMessageBox.critical(self, ui("Erro"), str(e))
 
@@ -366,9 +451,16 @@ class SetupsTabMixin:
                 QMessageBox.warning(self, ui("Aviso"), ui("O nome nao pode ser vazio."))
                 return
             try:
-                self.setup_mgr.replicate_setup(self._current_setup_path, target_car, target_track, new_name, adjust_19)
+                new_path, is_new = self.setup_mgr.replicate_setup(self._current_setup_path, target_car, target_track, new_name, adjust_19)
                 self.refresh_setups_table()
-                QMessageBox.information(self, ui("Sucesso"), ui("Setup replicado para {car} em {track}!", car=target_car, track=target_track))
+                if is_new:
+                    QMessageBox.information(self, ui("Sucesso"), ui("Setup replicado para {car} em {track}!", car=target_car, track=target_track))
+                else:
+                    QMessageBox.information(
+                        self, ui("Setup ja existe"),
+                        ui("Ja existe um setup com este conteudo exato em {car}/{track}: {path}. Nada foi duplicado.",
+                           car=target_car, track=target_track, path=new_path),
+                    )
             except Exception as e:
                 QMessageBox.critical(self, ui("Erro"), str(e))
 
@@ -500,16 +592,28 @@ class SetupsTabMixin:
 
     def standardize_existing_setup_names(self):
         try:
-            changed = self.setup_mgr.standardize_setup_names()
-            if not changed:
+            result = self.setup_mgr.standardize_setup_names()
+            renamed = result["renamed"]
+            duplicates = result["duplicates"]
+            if not renamed and not duplicates:
                 QMessageBox.information(self, ui("Padronizacao"), ui("Todos os nomes ja estao padronizados."))
                 return
             self.refresh_setups_filters()
             self.refresh_setups_table()
-            msg = "\n".join(f"{os.path.basename(item['from'])} -> {os.path.basename(item['to'])}" for item in changed[:10])
-            if len(changed) > 10:
-                msg += f"\n... (+{len(changed) - 10} arquivos)"
-            QMessageBox.information(self, ui("Padronizacao concluida"), msg)
+
+            lines = []
+            if renamed:
+                lines.append(ui("Renomeados:"))
+                lines += [f"  {os.path.basename(item['from'])} -> {os.path.basename(item['to'])}" for item in renamed[:10]]
+                if len(renamed) > 10:
+                    lines.append(f"  ... (+{len(renamed) - 10} arquivos)")
+            if duplicates:
+                lines.append("")
+                lines.append(ui("Duplicados encontrados (conteudo identico a outro setup ja padronizado - nao foram renomeados nem apagados, so ficaram de fora):"))
+                lines += [f"  {os.path.basename(item['duplicate_of'])} == {os.path.basename(item['kept'])}" for item in duplicates[:10]]
+                if len(duplicates) > 10:
+                    lines.append(f"  ... (+{len(duplicates) - 10} arquivos)")
+            QMessageBox.information(self, ui("Padronizacao concluida"), "\n".join(lines))
         except Exception as exc:
             QMessageBox.critical(self, ui("Erro"), str(exc))
 
@@ -519,6 +623,29 @@ class SetupsTabMixin:
             if lap.get("car") and lap.get("track_id") and str(lap.get("car")).lower() == str(car_id).lower() and str(lap.get("track_id")).lower() == str(track_id).lower():
                 laps.append(lap)
         return laps
+
+    def _race_strategy_inputs(self):
+        """Le os campos opcionais de duracao da corrida e combustivel por
+        volta preenchidos na aba (usados por 'Gerar Corrida' e pelo Setup
+        Inteligente). Devolve (race_minutes, fuel_per_lap) como float, ou
+        (None, None) se algum dos dois estiver vazio/invalido - nesse caso
+        quem chamou cai de volta no comportamento antigo (valor fixo)."""
+        try:
+            race_minutes = float(str(self.race_duration_input.text()).strip().replace(",", "."))
+            fuel_per_lap = float(str(self.fuel_per_lap_input.text()).strip().replace(",", "."))
+            if race_minutes <= 0 or fuel_per_lap <= 0:
+                return None, None
+            return race_minutes, fuel_per_lap
+        except (ValueError, AttributeError):
+            return None, None
+
+    def _best_known_lap_seconds(self, car_id: str, track_id: str):
+        """Menor 'raw_time' (segundos) entre as voltas do MoTeC que batem
+        com o carro/pista informados - usado como tempo de volta de
+        referencia no calculo de combustivel."""
+        laps = self._current_setup_telemetry(car_id, track_id)
+        times = [lap.get("raw_time") for lap in laps if isinstance(lap.get("raw_time"), (int, float))]
+        return min(times) if times else None
 
     def apply_preset(self, preset_type):
         if not self._current_setup_path or not self._current_setup_dict:
@@ -534,9 +661,22 @@ class SetupsTabMixin:
             suffix = "qualy"
             msg = "criado com baixo combustivel e pastilhas 1."
         elif preset_type == "race":
-            new_data = self.setup_mgr.generate_race_preset(self._current_setup_dict)
+            race_minutes, fuel_per_lap = self._race_strategy_inputs()
+            lap_time_seconds = self._best_known_lap_seconds(car_id, track_id) if (race_minutes and fuel_per_lap) else None
+            new_data = self.setup_mgr.generate_race_preset(
+                self._current_setup_dict,
+                race_minutes=race_minutes, fuel_per_lap=fuel_per_lap, lap_time_seconds=lap_time_seconds,
+            )
             suffix = "race"
-            msg = "criado com combustivel para stint e pastilhas 2."
+            if race_minutes and fuel_per_lap and lap_time_seconds:
+                fuel_final = new_data["basicSetup"]["strategy"]["fuel"]
+                msg = (f"criado com {fuel_final}L de combustivel (corrida de {race_minutes:.0f} min a "
+                       f"{fuel_per_lap:.1f}L/volta) e pastilhas 2.")
+            elif race_minutes and fuel_per_lap:
+                msg = ("criado com combustivel padrao (105L): nao ha volta registrada no MoTeC pra este "
+                       "carro/pista pra calcular o tempo de volta real.")
+            else:
+                msg = "criado com combustivel padrao (105L) e pastilhas 2."
         elif preset_type == "wet":
             new_data = self.setup_mgr.generate_wet_preset(self._current_setup_dict)
             suffix = "wet"
@@ -549,7 +689,13 @@ class SetupsTabMixin:
         if ok and new_name.strip():
             target_dir = os.path.dirname(self._current_setup_path)
             file_name = self.setup_mgr.normalize_setup_token(new_name.strip())
-            new_path = self.setup_mgr.get_unique_filename(target_dir, file_name)
+            new_path, is_new = self.setup_mgr.resolve_setup_save_path(target_dir, file_name, new_data)
+            if not is_new:
+                QMessageBox.information(
+                    self, ui("Setup ja existe"),
+                    ui("Ja existe um setup com este conteudo exato: {path}. Nada foi duplicado.", path=new_path),
+                )
+                return
             try:
                 self.setup_mgr.save_setup(new_path, new_data)
                 if self.save_telemetry_checkbox.isChecked():
@@ -621,9 +767,13 @@ class SetupsTabMixin:
         condition = self.creator_condition_combo.currentData()
         aggressiveness = self.creator_aggr_slider.value()
 
+        race_minutes, fuel_per_lap = self._race_strategy_inputs()
+        lap_time_seconds = self._best_known_lap_seconds(car_id, track_id) if (race_minutes and fuel_per_lap) else None
+
         try:
             new_data, meta = self.setup_creator.generate_smart_setup(
-                self._current_setup_dict, car_id, track_id, aggressiveness, condition
+                self._current_setup_dict, car_id, track_id, aggressiveness, condition,
+                race_minutes=race_minutes, fuel_per_lap=fuel_per_lap, lap_time_seconds=lap_time_seconds,
             )
         except Exception as e:
             QMessageBox.critical(self, ui("Erro"), ui("Nao foi possivel gerar o setup: {error}", error=e))
@@ -643,7 +793,13 @@ class SetupsTabMixin:
         target_dir = os.path.join(self.setup_mgr.setups_folder, car_id, track_id)
         os.makedirs(target_dir, exist_ok=True)
         file_name = self.setup_mgr.normalize_setup_token(new_name.strip())
-        new_path = self.setup_mgr.get_unique_filename(target_dir, file_name)
+        new_path, is_new = self.setup_mgr.resolve_setup_save_path(target_dir, file_name, new_data)
+        if not is_new:
+            QMessageBox.information(
+                self, ui("Setup ja existe"),
+                ui("Ja existe um setup com este conteudo exato: {path}. Nada foi duplicado.", path=new_path),
+            )
+            return
 
         try:
             self.setup_mgr.save_setup(new_path, new_data)
